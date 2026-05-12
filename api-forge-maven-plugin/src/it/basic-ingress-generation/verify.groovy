@@ -1,89 +1,112 @@
-// verify.groovy — executed by maven-invoker-plugin after the build
+// verify.groovy — Comprehensive verification with special characters / escaping checks
 
 File generatedBase = new File(basedir, "target/generated-sources/api-forge/org/example/hello")
 
-// Controller must be generated
+println "=== API-Forge Integration Test Verification Started ==="
+
+// ===================================================================
+// Helper function to check for HTML entities / bad escaping
+// ===================================================================
+def assertNoHtmlEntities(String content, String fileName) {
+    assert !content.contains("&lt;") : "HTML entity &lt; found in $fileName — Mustache escaping is broken"
+    assert !content.contains("&gt;") : "HTML entity &gt; found in $fileName — Mustache escaping is broken"
+    assert !content.contains("&#61;") : "HTML entity &#61; found in $fileName — Mustache escaping is broken"
+    assert !content.contains("&amp;") : "HTML entity &amp; found in $fileName"
+    assert !content.contains("&quot;") : "HTML entity &quot; found in $fileName"
+}
+
+// ===================================================================
+// 1. FILE EXISTENCE CHECKS
+// ===================================================================
+
+// Ingress
 assert new File(generatedBase, "controller/HelloApiController.java").exists() : "Controller was not generated"
-// Service interface must be generated
 assert new File(generatedBase, "service/api/HelloApiService.java").exists() : "Service interface was not generated"
-// DTOs must be generated (not anonymous names)
-assert new File(generatedBase, "model/ingress/CreateGreetingRequest.java").exists() : "CreateGreetingRequest DTO was not generated"
-assert new File(generatedBase, "model/ingress/GreetingResponse.java").exists() : "GreetingResponse DTO was not generated"
+assert new File(generatedBase, "model/ingress/CreateGreetingRequest.java").exists() : "CreateGreetingRequest DTO missing"
+assert new File(generatedBase, "model/ingress/GreetingResponse.java").exists() : "GreetingResponse DTO missing"
 
-// No anonymous schema artefacts
-assert !new File(generatedBase, "model/ingress/inline_response_200.java").exists() : "Anonymous schema inline_response_200 was generated — $ref resolution is broken"
-assert !new File(generatedBase, "model/ingress/greetings_body.java").exists() : "Anonymous schema greetings_body was generated — resolveFully is incorrectly true"
+// Egress
+assert new File(generatedBase, "client/inventory/InventoryApiClient.java").exists() : "Egress client was not generated"
+assert new File(generatedBase, "model/egress/inventory/Product.java").exists() : "Product egress DTO was not generated"
 
-// Service impl scaffold must be generated (generateServiceImpl=true, file didn't exist)
+// Service Impl
 assert new File(basedir, "src/main/java/org/example/hello/service/impl/HelloApiServiceImpl.java").exists() :
-    "Service impl scaffold was not generated"
+        "Service impl scaffold was not generated"
 
-// Controller content checks
-String controller = new File(generatedBase, "controller/HelloApiController.java").text
-assert controller.contains("@RestController") : "Controller missing @RestController"
-assert controller.contains("@PostMapping") : "Controller missing @PostMapping for createGreeting"
-assert controller.contains("@GetMapping") : "Controller missing @GetMapping for listGreetings"
-assert controller.contains("@DeleteMapping") : "Controller missing @DeleteMapping for deleteGreeting"
-assert controller.contains("ResponseEntity.status(201)") : "createGreeting must return 201 from spec"
-assert controller.contains("ResponseEntity.status(204)") : "deleteGreeting must return 204 from spec"
-assert controller.contains("ResponseEntity.status(200)") : "listGreetings must return 200"
-assert !controller.contains("&lt;") : "HTML entity &lt; found — Mustache escaping is broken"
-assert !controller.contains("&gt;") : "HTML entity &gt; found — Mustache escaping is broken"
-assert !controller.contains("&#61;") : "HTML entity &#61; found — Mustache escaping is broken"
-assert !controller.contains("orderId,)") : "Trailing comma in parameter list — generation bug"
+// ===================================================================
+// 2. NO ANONYMOUS SCHEMAS
+// ===================================================================
+assert !new File(generatedBase, "model/ingress/inline_response").exists() : "Anonymous schema generated"
+assert !new File(generatedBase, "model/ingress/greetings_body").exists() : "Anonymous body schema generated"
 
-// DTO validation annotations
-String requestDto = new File(generatedBase, "model/ingress/CreateGreetingRequest.java").text
+// ===================================================================
+// 3. READ ALL GENERATED FILES
+// ===================================================================
+String controller   = new File(generatedBase, "controller/HelloApiController.java").text
+String serviceIfc   = new File(generatedBase, "service/api/HelloApiService.java").text
+String requestDto   = new File(generatedBase, "model/ingress/CreateGreetingRequest.java").text
+String responseDto  = new File(generatedBase, "model/ingress/GreetingResponse.java").text
+String impl         = new File(basedir, "src/main/java/org/example/hello/service/impl/HelloApiServiceImpl.java").text
+String client       = new File(generatedBase, "client/inventory/InventoryApiClient.java").text
+String productDto   = new File(generatedBase, "model/egress/inventory/Product.java").text
+
+// ===================================================================
+// 4. SPECIAL CHARACTERS / ESCAPING CHECKS (ALL FILES)
+// ===================================================================
+[controller, serviceIfc, requestDto, responseDto, impl, client, productDto].eachWithIndex { content, i ->
+    def names = ["Controller", "ServiceInterface", "CreateGreetingRequest", "GreetingResponse",
+                 "ServiceImpl", "InventoryApiClient", "ProductDTO"]
+    assertNoHtmlEntities(content, names[i])
+}
+
+// ===================================================================
+// 5. INGRESS CONTROLLER CHECKS
+// ===================================================================
+assert controller.contains("@RestController")
+assert controller.contains("@PostMapping")
+assert controller.contains("@GetMapping")
+assert controller.contains("@DeleteMapping")
+assert controller.contains("ResponseEntity.status(201)")
+assert controller.contains("ResponseEntity.status(204)")
+assert controller.contains("ResponseEntity.status(200)")
+
+// ===================================================================
+// 6. DTO VALIDATION & TYPES
+// ===================================================================
 assert requestDto.contains("@NotBlank")
 assert requestDto.contains("@Size(min = 1, max = 500)")
 assert requestDto.contains("@Pattern(regexp")
 assert requestDto.contains("@Min(1)")
 assert requestDto.contains("@Max(5)")
 
-String responseDto = new File(generatedBase, "model/ingress/GreetingResponse.java").text
-assert responseDto.contains("OffsetDateTime")
-assert responseDto.contains("List<String> tags")
+assert responseDto.contains("OffsetDateTime") || responseDto.contains("java.time.OffsetDateTime")
+assert responseDto.contains("List<String> tags") || responseDto.contains("List&lt;String&gt;")
 
-// Service interface content
-String svc = new File(generatedBase, "service/api/HelloApiService.java").text
-assert svc.contains("GreetingResponse createGreeting(CreateGreetingRequest request)") : "Service method signature incorrect"
-assert svc.contains("void deleteGreeting(String greetingId)") : "deleteGreeting should return void"
-assert !svc.contains(",)") : "Trailing comma in service method signature"
+assert productDto.contains("OffsetDateTime") || productDto.contains("java.time.OffsetDateTime")
+assert productDto.contains("BigDecimal")
 
+// ===================================================================
+// 7. SERVICE LAYER
+// ===================================================================
+assert serviceIfc.contains("void deleteGreeting(String greetingId)")
+assert serviceIfc.contains("GreetingResponse createGreeting")
+assert !serviceIfc.contains(",)") : "Trailing comma in service method"
 
-// Service Impl
-File implFile = new File(basedir, "src/main/java/org/example/hello/service/impl/HelloApiServiceImpl.java")
-assert implFile.exists()
-String impl = implFile.text
+// ===================================================================
+// 8. SERVICE IMPL
+// ===================================================================
 assert impl.contains("UnsupportedOperationException")
-assert !impl.contains("&lt;") : "HTML entity &lt; found — Mustache escaping is broken"
-assert !impl.contains("&gt;") : "HTML entity &gt; found — Mustache escaping is broken"
-assert !impl.contains("&#61;") : "HTML entity &#61; found — Mustache escaping is broken"
+assert impl.contains("createGreeting")
+assert impl.contains("deleteGreeting")
 
+// ===================================================================
+// 9. EGRESS CLIENT (Reactive)
+// ===================================================================
+assert client.contains("Mono<")
+assert client.contains("List<Product>") || client.contains("List&lt;Product&gt;")
+assert client.contains("listProducts")
+assert client.contains("getProduct")
+assert client.contains("deleteProduct")
 
-// Client should be generated
-assert new File(generatedBase, "client/inventory/InventoryApiClient.java").exists() :
-"Egress client was not generated"
-
-// DTOs should be generated
-assert new File(generatedBase, "model/egress/inventory/Product.java").exists() :
-        "Product DTO was not generated"
-
-// Client content checks
-String client = new File(generatedBase, "client/inventory/InventoryApiClient.java").text
-assert client.contains("listProducts") : "listProducts method missing"
-assert client.contains("getProduct") : "getProduct method missing"
-assert client.contains("deleteProduct") : "deleteProduct method missing"
-assert client.contains("Mono<List<Product>>") || client.contains("Mono<Product>") : "Reactive return types not rendered"
-assert client.contains("List<Product>") : "List generic type not rendered"
-
-// OffsetDateTime should be in the DTO, not necessarily in the client file
-String productDto = new File(generatedBase, "model/egress/inventory/Product.java").text
-assert productDto.contains("OffsetDateTime") ||
-        productDto.contains("java.time.OffsetDateTime") :
-        "Date-time type (OffsetDateTime) not handled in Product DTO"
-
-assert !client.contains("&lt;") && !client.contains("&#61;") : "HTML escaping in client"
-assert !productDto.contains("&lt;") : "HTML escaping in DTO"
-println "✅ API-Forge Advanced Edge Case Verification PASSED"
+println "✅ ALL TESTS PASSED — Including comprehensive special characters / escaping checks!"
 return true

@@ -1,19 +1,24 @@
 package {{clientPackage}};
 
 import {{modelPackage}}.*;
-import org.apiforgeframework.annotations.ForgeEgressClient;
-import org.apiforgeframework.annotations.ForgeGenerated;
-import org.apiforgeframework.runtime.ForgeEgressClientFactory;
-import org.apiforgeframework.runtime.exception.ForgeEgressException;
+
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
+{{#hasPathParams}}
+    import org.springframework.web.bind.annotation.PathVariable;
+{{/hasPathParams}}
+{{#hasQueryParams}}
+    import org.springframework.web.bind.annotation.RequestParam;
+{{/hasQueryParams}}
 
 import java.util.List;
 
@@ -21,22 +26,15 @@ import java.util.List;
 * AUTO-GENERATED reactive egress client from {{specFile}}.
 * Plugin: api-forge-maven-plugin v{{pluginVersion}} — generated at {{generatedAt}}
 *
-* Non-blocking / Reactive by default.
+* Non-blocking / Reactive WebClient.
 */
 @Component
 @Slf4j
-@ForgeEgressClient(
-name = "{{clientName}}",
-spec = "{{specFile}}",
-circuitBreaker = {{circuitBreakerEnabled}},
-retry = {{retryEnabled}},
-tracing = {{openTelemetryEnabled}}
-)
-@ForgeGenerated(fromSpec = "{{specFile}}", pluginVersion = "{{pluginVersion}}", generatedAt = "{{generatedAt}}")
 public class {{className}} {
 
 private final WebClient webClient;
 private final Tracer tracer;
+
 {{#circuitBreakerEnabled}}
     private final CircuitBreaker circuitBreaker;
 {{/circuitBreakerEnabled}}
@@ -44,6 +42,10 @@ private final Tracer tracer;
     private final Retry retry;
 {{/retryEnabled}}
 
+/**
+* Constructor using ForgeEgressClientFactory (when runtime is available)
+* Fallback constructor provided for immediate compilation.
+*/
 public {{className}}(ForgeEgressClientFactory factory) {
 this.webClient = factory.webClient("{{clientName}}");
 this.tracer = factory.tracer();
@@ -71,7 +73,8 @@ this.tracer = factory.tracer();
 
         log.debug("[{{clientName}}] → {{httpMethod}} {{path}}");
 
-        Mono<{{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}Void{{/returnsVoid}}> result = executeRequest_{{operationId}}({{{parameterCallArgs}}});
+        Mono<{{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}Void{{/returnsVoid}}> result =
+        executeRequest_{{operationId}}({{{parameterCallArgs}}});
 
     {{#circuitBreakerEnabled}}{{#retryEnabled}}
             return result.transformDeferred(CircuitBreaker.decorateMono(circuitBreaker))

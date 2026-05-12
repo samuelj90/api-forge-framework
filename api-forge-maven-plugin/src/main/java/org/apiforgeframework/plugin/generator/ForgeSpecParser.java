@@ -208,19 +208,35 @@ public class ForgeSpecParser {
     private String schemaToJavaType(Schema schema) {
         if (schema == null) return null;
 
-        // Named component reference: preserve as class name
+        // Named $ref - most common case
         if (schema.get$ref() != null) {
             return refToName(schema.get$ref());
         }
 
-        // Array: recurse on items
+        // Array
         if ("array".equals(schema.getType())) {
-            Schema items = schema.getItems();
-            String itemType = items != null ? schemaToJavaType(items) : "Object";
+            String itemType = schemaToJavaType(schema.getItems());
             return "List<" + (itemType != null ? itemType : "Object") + ">";
         }
 
-        // Primitive types
+        // allOf / anyOf / oneOf → fall back to first schema or Object
+        if (schema.getAllOf() != null && !schema.getAllOf().isEmpty()) {
+            return schemaToJavaType((Schema) schema.getAllOf().get(0));
+        }
+        if (schema.getAnyOf() != null && !schema.getAnyOf().isEmpty()) {
+            return schemaToJavaType((Schema) schema.getAnyOf().get(0));
+        }
+
+        // Enum
+        if (schema.getEnum() != null && !schema.getEnum().isEmpty()) {
+            return "String"; // or create enum class in future
+        }
+
+        // Object with properties → should be named ref, but fallback
+        if ("object".equals(schema.getType()) && schema.getProperties() != null) {
+            return "Object"; // or generate anonymous (not recommended)
+        }
+
         return mapPrimitive(schema.getType(), schema.getFormat());
     }
 
