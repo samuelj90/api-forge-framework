@@ -1,0 +1,58 @@
+{
+  "mappings": [
+    {
+      "name": "inventory-reserve-success",
+      "request": {
+        "method": "POST",
+        "url": "/inventory/reserve"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "reservation_id": "res_test_001",
+          "status": "CONFIRMED",
+          "expires_at": "2099-12-31T00:00:00Z",
+          "items": [
+            {
+              "sku": "SKU-001",
+              "reserved_quantity": 2,
+              "available_quantity": 98
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "inventory-stock-level-sku001",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/inventory/items/SKU-001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "sku": "SKU-001",
+          "available": 100,
+          "reserved": 0,
+          "reorder_point": 10
+        }
+      }
+    },
+    {
+      "name": "inventory-release-reservation",
+      "request": {
+        "method": "DELETE",
+        "urlPattern": "/inventory/reserve/.*"
+      },
+      "response": {
+        "status": 204
+      }
+    }
+  ]
+}

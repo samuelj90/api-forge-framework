@@ -1,0 +1,49 @@
+package {{servicePackage}};
+
+import {{modelPackage}}.*;
+import org.apiforgeframework.annotations.ForgeGenerated;
+import org.apiforgeframework.annotations.ForgeService;
+
+/**
+ * AUTO-GENERATED service contract from {{specFile}}.
+ * Plugin: api-forge-maven-plugin v{{pluginVersion}} — generated at {{generatedAt}}
+ *
+ * DO NOT EDIT — regenerated on every build.
+ *
+ * Implement this interface in {@code service/impl/{{className}}Impl.java}.
+ * The generated controller delegates every request to the corresponding method here.
+ *
+ * Example:
+ * <pre>
+ * {@code @Service}
+ * public class {{className}}Impl implements {{className}} {
+ *     // implement each method below
+ * }
+ * </pre>
+ */
+@ForgeService(
+    spec = "{{specFile}}",
+    apiVersion = "{{apiVersion}}",
+    title = "{{title}}"
+)
+@ForgeGenerated(fromSpec = "{{specFile}}", pluginVersion = "{{pluginVersion}}", generatedAt = "{{generatedAt}}")
+public interface {{className}} {
+
+    {{#operations}}
+    /**
+     * {{summary}}
+     * <p>HTTP {{httpMethod}} {{path}}
+     {{#deprecated}}
+     * @deprecated as per API spec
+     {{/deprecated}}
+     */
+    {{#deprecated}}@Deprecated
+    {{/deprecated}}{{^returnsVoid}}{{responseSchema}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} {{operationId}}(
+            {{#pathParams}}{{javaType}} {{name}},
+            {{/pathParams}}
+            {{#queryParams}}{{javaType}} {{name}},
+            {{/queryParams}}
+            {{#hasRequestBody}}{{requestBodySchema}} request{{/hasRequestBody}});
+
+    {{/operations}}
+}

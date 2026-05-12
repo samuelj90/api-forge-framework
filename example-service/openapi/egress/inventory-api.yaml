@@ -1,0 +1,118 @@
+openapi: "3.0.3"
+info:
+  title: Inventory API
+  version: "2.1.0"
+  description: |
+    Upstream Inventory Service API consumed by the Orders Service.
+    A typed WebClient stub is generated from this spec by api-forge-maven-plugin.
+
+servers:
+  - url: https://inventory.internal
+    description: Internal inventory service
+
+paths:
+  /inventory/reserve:
+    post:
+      operationId: reserveStock
+      summary: Reserve stock for an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/StockReservationRequest'
+      responses:
+        '200':
+          description: Reservation confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '409':
+          description: Insufficient stock
+
+  /inventory/reserve/{reservationId}:
+    delete:
+      operationId: releaseReservation
+      summary: Release a stock reservation
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Released
+
+  /inventory/items/{sku}:
+    get:
+      operationId: getStockLevel
+      summary: Get current stock level for a SKU
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stock level
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockLevelResponse'
+
+components:
+  schemas:
+    StockReservationRequest:
+      type: object
+      required: [sku, quantity]
+      properties:
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        order_reference:
+          type: string
+
+    ReservationResponse:
+      type: object
+      properties:
+        reservation_id:
+          type: string
+        status:
+          type: string
+          enum: [CONFIRMED, PENDING, FAILED]
+        expires_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservedItem'
+
+    ReservedItem:
+      type: object
+      properties:
+        sku:
+          type: string
+        reserved_quantity:
+          type: integer
+        available_quantity:
+          type: integer
+
+    StockLevelResponse:
+      type: object
+      properties:
+        sku:
+          type: string
+        available:
+          type: integer
+        reserved:
+          type: integer
+        reorder_point:
+          type: integer

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.apiforgeframework</groupId>
+    <artifactId>api-forge-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>API-Forge :: Parent</name>
+    <description>OpenAPI-first code generation framework for Spring Boot</description>
+
+    <modules>
+        <module>api-forge-annotations</module>
+        <module>api-forge-runtime</module>
+        <module>api-forge-maven-plugin</module>
+        <module>api-forge-test-support</module>
+        <module>example-service</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Spring -->
+        <spring-boot.version>3.2.0</spring-boot.version>
+
+        <!-- OpenAPI -->
+        <openapi-generator.version>7.2.0</openapi-generator.version>
+        <swagger-parser.version>2.1.20</swagger-parser.version>
+        <springdoc.version>2.3.0</springdoc.version>
+
+        <!-- Resilience & Observability -->
+        <resilience4j.version>2.1.0</resilience4j.version>
+        <micrometer-tracing.version>1.2.0</micrometer-tracing.version>
+
+        <!-- Utilities -->
+        <lombok.version>1.18.30</lombok.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+
+        <mustache-compiler.version>0.9.11</mustache-compiler.version>
+
+        <!-- Testing -->
+        <wiremock.version>3.3.1</wiremock.version>
+        <archunit.version>1.2.1</archunit.version>
+
+        <!-- Plugin versions -->
+        <maven-core.version>3.9.13</maven-core.version>
+        <maven-plugin-api.version>3.9.13</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
+        <!-- Build plugins -->
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Internal modules -->
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-annotations</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-runtime</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-test-support</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- OpenAPI Generator -->
+            <dependency>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator</artifactId>
+                <version>${openapi-generator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.parser.v3</groupId>
+                <artifactId>swagger-parser</artifactId>
+                <version>${swagger-parser.version}</version>
+            </dependency>
+
+            <!-- Resilience4j -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-reactor</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
+            <!-- MapStruct -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+
+            <!-- SpringDoc -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- WireMock -->
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
+            </dependency>
+
+            <!-- ArchUnit -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
+
+            <!-- Maven Plugin API -->
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-plugin-api</artifactId>
+                <version>${maven-plugin-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-tools</groupId>
+                <artifactId>maven-plugin-annotations</artifactId>
+                <version>${maven-plugin-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>${maven-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.spullara.mustache.java</groupId>
+                <artifactId>compiler</artifactId>
+                <version>${mustache-compiler.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                    <configuration>
+                        <excludes>
+                            <!-- Exclude all generated code from coverage -->
+                            <exclude>**/*Generated*</exclude>
+                            <exclude>**/model/ingress/**</exclude>
+                            <exclude>**/model/egress/**</exclude>
+                            <exclude>**/controller/**Controller*</exclude>
+                            <exclude>**/client/**ApiClient*</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

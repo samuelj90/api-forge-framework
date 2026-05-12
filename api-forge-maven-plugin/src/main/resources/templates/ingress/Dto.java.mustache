@@ -1,0 +1,50 @@
+package {{modelPackage}};
+
+import org.apiforgeframework.annotations.ForgeGenerated;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+{{#lombokEnabled}}
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+{{/lombokEnabled}}
+{{#validationEnabled}}
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+{{/validationEnabled}}
+import java.util.List;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
+/**
+ * AUTO-GENERATED DTO from spec: {{specFile}}
+ * Plugin: api-forge-maven-plugin v{{pluginVersion}} — generated at {{generatedAt}}
+ *
+ * DO NOT EDIT.
+ */
+{{#lombokEnabled}}
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+{{/lombokEnabled}}
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@ForgeGenerated(fromSpec = "{{specFile}}", pluginVersion = "{{pluginVersion}}", generatedAt = "{{generatedAt}}")
+public class {{className}} {
+
+    {{#fields}}
+    {{#description}}
+    /** {{description}} */
+    {{/description}}
+    {{#validationEnabled}}
+    {{#validationAnnotations}}
+    {{.}}
+    {{/validationAnnotations}}
+    {{/validationEnabled}}
+    private {{javaType}} {{name}};
+
+    {{/fields}}
+}

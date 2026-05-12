@@ -1,0 +1,395 @@
+openapi: "3.0.3"
+info:
+  title: Orders API
+  version: "1.0.0"
+  description: |
+    Ingress API for the Orders Service.
+    This spec is the single source of truth — controllers, DTOs, and validation
+    are generated automatically by api-forge-maven-plugin.
+  contact:
+    name: Platform Engineering
+    email: platform@company.com
+
+servers:
+  - url: https://api.company.com/api/v1
+    description: Production
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: Orders
+    description: Order lifecycle management
+
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Create a new order
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              customer_id: "cust_abc123"
+              items:
+                - sku: "SKU-001"
+                  quantity: 2
+                  unit_price: 29.99
+              payment:
+                method: "CARD"
+                token: "tok_visa"
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '422':
+          $ref: '#/components/responses/BusinessError'
+
+    get:
+      operationId: listOrders
+      summary: List orders with filtering and pagination
+      tags: [Orders]
+      parameters:
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+          description: Filter by customer ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+          description: Filter by order status
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Zero-based page number
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 200
+          description: Number of results per page
+      responses:
+        '200':
+          description: Paginated list of orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPageResponse'
+
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      summary: Retrieve a single order by ID
+      tags: [Orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      operationId: updateOrder
+      summary: Update an order (idempotent)
+      tags: [Orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      operationId: cancelOrder
+      summary: Cancel an order
+      tags: [Orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '204':
+          description: Order cancelled
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/BusinessError'
+
+  /orders/{orderId}/ship:
+    post:
+      operationId: shipOrder
+      summary: Mark an order as shipped
+      tags: [Orders]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipOrderRequest'
+      responses:
+        '200':
+          description: Shipment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+
+  /orders/{orderId}/events:
+    get:
+      operationId: streamOrderEvents
+      summary: Stream order events (SSE) — manually implemented
+      description: |
+        This endpoint uses Server-Sent Events and is excluded from code generation
+        via <manualOperations> in the plugin configuration.
+        See OrderStreamController.java for the hand-written implementation.
+      tags: [Orders]
+      x-forge-manual: true
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The unique order identifier
+
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required: [customer_id, items, payment]
+      properties:
+        customer_id:
+          type: string
+          minLength: 1
+          description: Unique customer identifier
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+        payment:
+          $ref: '#/components/schemas/PaymentDetailsRequest'
+        notes:
+          type: string
+          maxLength: 1000
+          description: Optional order notes
+
+    OrderItemRequest:
+      type: object
+      required: [sku, quantity, unit_price]
+      properties:
+        sku:
+          type: string
+          pattern: '^SKU-\d{3,10}$'
+          description: Stock-keeping unit identifier
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 9999
+        unit_price:
+          type: number
+          minimum: 0.01
+          description: Price per unit in account currency
+
+    PaymentDetailsRequest:
+      type: object
+      required: [method]
+      properties:
+        method:
+          type: string
+          enum: [CARD, BANK_TRANSFER, WALLET]
+        token:
+          type: string
+          description: Payment token (required for CARD method)
+
+    UpdateOrderRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          maxLength: 1000
+        shipping_address:
+          $ref: '#/components/schemas/AddressRequest'
+
+    ShipOrderRequest:
+      type: object
+      required: [carrier]
+      properties:
+        carrier:
+          type: string
+          description: Shipping carrier code (e.g. UPS, FEDEX, DHL)
+        tracking_number:
+          type: string
+        estimated_delivery_date:
+          type: string
+          format: date
+
+    AddressRequest:
+      type: object
+      required: [line1, city, country_code]
+      properties:
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country_code:
+          type: string
+          pattern: '^[A-Z]{2}$'
+
+    OrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: string
+        customer_id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+        total_amount:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    OrderItemResponse:
+      type: object
+      properties:
+        sku:
+          type: string
+        quantity:
+          type: integer
+        unit_price:
+          type: number
+        line_total:
+          type: number
+
+    OrderPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        total_elements:
+          type: integer
+        total_pages:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+    ShipmentResponse:
+      type: object
+      properties:
+        shipment_id:
+          type: string
+        order_id:
+          type: string
+        carrier:
+          type: string
+        tracking_number:
+          type: string
+        estimated_delivery_date:
+          type: string
+          format: date
+
+    ErrorResponse:
+      description: Standard error envelope
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        trace_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        field_errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BusinessError:
+      description: Business rule violation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+

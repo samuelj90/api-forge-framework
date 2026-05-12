@@ -1,0 +1,143 @@
+openapi: "3.0.3"
+info:
+  title: Payment API
+  version: "1.0.0"
+  description: |
+    Upstream Payment Service API consumed by the Orders Service.
+    Uses OAuth2 client-credentials authentication (configured in application.yml).
+
+servers:
+  - url: https://payment.internal
+    description: Internal payment service
+
+paths:
+  /payments/initiate:
+    post:
+      operationId: initiatePayment
+      summary: Initiate a payment for an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiatePaymentRequest'
+      responses:
+        '200':
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '422':
+          description: Payment declined
+
+  /payments/{paymentId}:
+    get:
+      operationId: getPaymentStatus
+      summary: Get payment status
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+
+  /payments/{paymentId}/refund:
+    post:
+      operationId: refundPayment
+      summary: Refund a payment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+      responses:
+        '200':
+          description: Refund initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+
+components:
+  schemas:
+    InitiatePaymentRequest:
+      type: object
+      required: [order_id, amount, currency, method]
+      properties:
+        order_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0.01
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        method:
+          type: string
+          enum: [CARD, BANK_TRANSFER, WALLET]
+        payment_token:
+          type: string
+        idempotency_key:
+          type: string
+
+    PaymentResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+        order_id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, SUCCEEDED, FAILED, REFUNDED]
+        amount:
+          type: number
+        currency:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        failure_reason:
+          type: string
+
+    RefundRequest:
+      type: object
+      required: [amount, reason]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+        reason:
+          type: string
+          enum: [CUSTOMER_REQUEST, FRAUD, DUPLICATE, ORDER_CANCELLED]
+
+    RefundResponse:
+      type: object
+      properties:
+        refund_id:
+          type: string
+        payment_id:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED]
+        estimated_arrival_date:
+          type: string
+          format: date
