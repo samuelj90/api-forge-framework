@@ -40,9 +40,7 @@ public class {{className}} {
     /** {{description}} */
     {{/description}}
     {{#validationEnabled}}
-    {{#validationAnnotations}}
-    {{.}}
-    {{/validationAnnotations}}
+    {{#validationAnnotations}} {{{.}}} {{/validationAnnotations}}
     {{/validationEnabled}}
     private {{javaType}} {{name}};
 

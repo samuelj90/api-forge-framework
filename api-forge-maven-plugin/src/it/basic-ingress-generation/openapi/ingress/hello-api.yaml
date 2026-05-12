@@ -17,15 +17,19 @@ paths:
               $ref: '#/components/schemas/CreateGreetingRequest'
       responses:
         '201':
+          description: Greeting created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GreetingResponse'
+        '400':
+          description: Validation error
     get:
       operationId: listGreetings
       summary: List all greetings
       responses:
         '200':
+          description: List of greetings
           content:
             application/json:
               schema:
@@ -42,10 +46,13 @@ paths:
             type: string
       responses:
         '200':
+          description: List of greetings
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GreetingResponse'
+        '404':
+          description: Not found
     delete:
       operationId: deleteGreeting
       summary: Delete a greeting

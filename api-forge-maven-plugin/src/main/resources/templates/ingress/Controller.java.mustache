@@ -34,14 +34,14 @@ public class {{className}} {
     {{#deprecated}}
     @Deprecated
     {{/deprecated}}
-    {{springAnnotation}}("{{path}}")
+    {{springMappingAnnotation}}("{{path}}")
     @ForgeOperation(operationId = "{{operationId}}", httpMethod = "{{httpMethod}}", path = "{{path}}")
     public ResponseEntity<{{#responseSchema}}{{responseSchema}}{{/responseSchema}}{{^responseSchema}}Void{{/responseSchema}}> {{operationId}}(
             {{#pathParams}}
-            {{springAnnotation}} {{javaType}} {{name}},
+            @PathVariable {{javaType}} {{name}},
             {{/pathParams}}
             {{#queryParams}}
-            {{springAnnotation}} {{javaType}} {{name}},
+            @RequestParam {{javaType}} {{name}},
             {{/queryParams}}
             {{#hasRequestBody}}
             @Valid @RequestBody {{requestBodySchema}} requestBody{{/hasRequestBody}}) {
@@ -61,10 +61,10 @@ public class {{className}} {
                     {{/queryParams}}
                     {{#hasRequestBody}}requestBody{{/hasRequestBody}});
             {{#returnsVoid}}
-            return ResponseEntity.status({{successStatus}}).build();
+            return ResponseEntity.status({{successStatusCode}}).build();
             {{/returnsVoid}}
             {{^returnsVoid}}
-            return ResponseEntity.status({{successStatus}}).body(result);
+            return ResponseEntity.status({{successStatusCode}}).body(result);
             {{/returnsVoid}}
         {{#openTelemetryEnabled}}
         } catch (Exception e) {
