@@ -1,0 +1,68 @@
+package {{implPackage}};
+
+import {{serviceApiPackage}}.{{serviceInterface}};
+{{#operations}}
+    {{^returnsVoid}}
+        import {{modelPackage}}.{{returnType}};
+    {{/returnsVoid}}
+{{/operations}}
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+* Auto-generated service implementation scaffold.
+*
+* <p><strong>Specification:</strong> {{specFile}}</p>
+* <p><strong>Generated at:</strong> {{generatedAt}}</p>
+*
+* <p>
+    * This file is generated only once and will never be overwritten automatically.
+    * After generation, it is considered application-owned code.
+    * </p>
+*/
+@Service
+{{#lombokEnabled}}
+    @RequiredArgsConstructor
+    @Slf4j
+{{/lombokEnabled}}
+public class {{className}} implements {{serviceInterface}} {
+
+// -------------------------------------------------------------------------
+// Egress clients / repositories / dependencies
+// -------------------------------------------------------------------------
+
+// Example:
+// private final ExternalClient externalClient;
+// private final UserRepository userRepository;
+
+{{#operations}}
+
+    /**
+    * {{summary}}
+    */
+    {{#deprecated}}
+        @Deprecated
+    {{/deprecated}}
+    @Override
+    public {{returnType}} {{serviceMethodDeclaration}} {
+
+    // TODO: Implement operation "{{operationId}}"
+
+    {{#lombokEnabled}}
+        log.debug("Executing operation: {{operationId}}");
+    {{/lombokEnabled}}
+
+    {{#returnsVoid}}
+        throw new UnsupportedOperationException(
+        "Operation '{{operationId}}' is not implemented yet");
+    {{/returnsVoid}}
+
+    {{^returnsVoid}}
+        throw new UnsupportedOperationException(
+        "Operation '{{operationId}}' is not implemented yet");
+    {{/returnsVoid}}
+    }
+{{/operations}}
+}
