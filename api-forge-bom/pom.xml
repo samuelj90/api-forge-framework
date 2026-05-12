@@ -4,38 +4,81 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.apiforgeframework</groupId>
-        <artifactId>api-forge-parent</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <groupId>org.apiforgeframework</groupId>
     <artifactId>api-forge-bom</artifactId>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>API-Forge :: BOM</name>
     <description>
         Bill of Materials for API-Forge consumers.
-
         Import this BOM and you never specify api-forge artifact versions individually:
-
-            &lt;dependencyManagement&gt;
-              &lt;dependencies&gt;
-                &lt;dependency&gt;
-                  &lt;groupId&gt;org.apiforgeframework&lt;/groupId&gt;
-                  &lt;artifactId&gt;api-forge-bom&lt;/artifactId&gt;
-                  &lt;version&gt;1.0.0&lt;/version&gt;
-                  &lt;type&gt;pom&lt;/type&gt;
-                  &lt;scope&gt;import&lt;/scope&gt;
-                &lt;/dependency&gt;
-              &lt;/dependencies&gt;
-            &lt;/dependencyManagement&gt;
-
-        Then simply declare:
-            &lt;dependency&gt;
-              &lt;groupId&gt;org.apiforgeframework&lt;/groupId&gt;
-              &lt;artifactId&gt;api-forge-spring-boot-starter&lt;/artifactId&gt;
-            &lt;/dependency&gt;
     </description>
+
+    <properties>
+        <revision>1.0.0-SNAPSHOT</revision>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!--
+        ═══════════════════════════════════════════════════════════════════════
+        DEPENDENCY VERSION CATALOGUE
+        ═══════════════════════════════════════════════════════════════════════
+        All third-party versions live here and nowhere else.
+
+        HOW TO RESPOND TO A CVE
+        ───────────────────────
+        1. Run `mvn verify -Powasp` — the OWASP profile identifies the artifact.
+        2. Find its property below (e.g. swagger-parser.version).
+        3. Bump the value to the patched version.
+        4. Run `mvn verify` — Enforcer's dependencyConvergence rule ensures the
+           new version resolves consistently across the whole tree.
+        5. Commit, tag, release. The BOM propagates the fix to all consumers.
+
+        SPRING BOOT MANAGED DEPS
+        ────────────────────────
+        Dependencies managed by the Spring Boot BOM (Jackson, Netty, Micrometer,
+        SnakeYAML, etc.) are intentionally NOT listed here. We let the Spring
+        Boot BOM own those versions so consumer projects don't get a second
+        conflicting pinned version from us.
+
+        To override a Spring-Boot-managed dep for a CVE, add it to the
+        <dependencyManagement> section below AFTER the spring-boot-dependencies
+        import. Ordering matters — later entries win.
+        ═══════════════════════════════════════════════════════════════════════
+        -->
+
+        <!-- Core framework -->
+        <spring-boot.version>3.2.0</spring-boot.version>
+
+        <!-- OpenAPI tooling — NOT managed by Spring Boot BOM -->
+        <openapi-generator.version>7.2.0</openapi-generator.version>
+        <swagger-parser.version>2.1.20</swagger-parser.version>
+        <springdoc.version>2.3.0</springdoc.version>
+
+        <!-- Resilience — NOT managed by Spring Boot BOM -->
+        <resilience4j.version>2.1.0</resilience4j.version>
+
+        <!-- Code generation utilities — NOT managed by Spring Boot BOM -->
+        <lombok.version>1.18.30</lombok.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <mustache.version>0.9.11</mustache.version>
+
+        <!-- Testing — NOT managed by Spring Boot BOM -->
+        <wiremock.version>3.3.1</wiremock.version>
+        <archunit.version>1.2.1</archunit.version>
+
+        <!-- Maven plugin infrastructure -->
+        <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
+        <maven-core.version>3.9.6</maven-core.version>
+
+        <!-- Build plugins -->
+        <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
+        <maven-invoker-plugin.version>3.6.0</maven-invoker-plugin.version>
+        <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+        <owasp-dependency-check.version>9.0.9</owasp-dependency-check.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -58,6 +101,36 @@
                 <groupId>org.apiforgeframework</groupId>
                 <artifactId>api-forge-test-support</artifactId>
                 <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-reactor</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock-standalone</artifactId>
+                <version>${wiremock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

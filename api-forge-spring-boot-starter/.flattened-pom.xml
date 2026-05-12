@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apiforgeframework</groupId>
+    <artifactId>api-forge-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>api-forge-spring-boot-starter</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>API-Forge :: Spring Boot Starter</name>
+  <description>Spring Boot starter for API-Forge.
+
+        This is the single dependency consumers add to get the full
+        API-Forge runtime: autoconfiguration, egress client factory,
+        exception handling, observability hooks, and validation support.
+
+        Usage in your service:
+            &lt;dependency>
+              &lt;groupId>org.apiforgeframework&lt;/groupId>
+              &lt;artifactId>api-forge-spring-boot-starter&lt;/artifactId>
+            &lt;/dependency>
+
+        No @EnableApiForge or any other annotation is required.
+        Spring Boot's autoconfiguration mechanism picks up
+        ForgeAutoConfiguration automatically via
+        META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+        which is defined in api-forge-runtime.</description>
+  <dependencies>
+    <dependency>
+      <groupId>org.apiforgeframework</groupId>
+      <artifactId>api-forge-runtime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apiforgeframework</groupId>
+      <artifactId>api-forge-annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+</project>
