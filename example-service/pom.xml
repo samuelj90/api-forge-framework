@@ -1,288 +1,167 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- =========================================================
-         Project Metadata
-         ========================================================= -->
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.6</version>
-        <relativePath/>
+        <groupId>org.apiforgeframework</groupId>
+        <artifactId>api-forge-parent</artifactId>
+        <version>${revision}</version>
     </parent>
 
     <groupId>com.company.orders</groupId>
     <artifactId>orders-service</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-
     <name>Example :: Orders Service</name>
     <description>
-        Demo service showing API-Forge in action.
-        Only OrdersApiServiceImpl.java is handwritten —
-        everything else is generated.
+        Demo service. Only OrdersApiServiceImpl.java is hand-written —
+        everything else is generated from the OpenAPI specs.
     </description>
 
-    <!-- =========================================================
-         Properties
-         ========================================================= -->
-    <properties>
-        <java.version>17</java.version>
-
-        <spring-cloud.version>2023.0.3</spring-cloud.version>
-
-        <api-forge.version>1.0.0-SNAPSHOT</api-forge.version>
-
-        <mapstruct.version>1.6.0</mapstruct.version>
-        <resilience4j.version>2.2.0</resilience4j.version>
-        <springdoc.version>2.6.0</springdoc.version>
-
-        <wiremock.version>3.6.0</wiremock.version>
-        <archunit.version>1.3.0</archunit.version>
-
-        <jacoco.version>0.8.12</jacoco.version>
-    </properties>
-
-    <!-- =========================================================
-         Dependency Management
-         ========================================================= -->
-    <dependencyManagement>
-        <dependencies>
-
-            <!-- Spring Cloud BOM -->
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-        </dependencies>
-    </dependencyManagement>
-
-    <!-- =========================================================
-         Dependencies
-         ========================================================= -->
     <dependencies>
-
-        <!-- =========================
-             API Forge
-             ========================= -->
+        <!--
+            Single starter dependency — replaces separate annotations + runtime imports.
+            Pulls in autoconfiguration, egress factory, exception handling, validation.
+        -->
         <dependency>
             <groupId>org.apiforgeframework</groupId>
-            <artifactId>api-forge-annotations</artifactId>
-            <version>${api-forge.version}</version>
+            <artifactId>api-forge-spring-boot-starter</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apiforgeframework</groupId>
-            <artifactId>api-forge-runtime</artifactId>
-            <version>${api-forge.version}</version>
-        </dependency>
-
-        <!-- =========================
-             Spring Boot
-             ========================= -->
+        <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- =========================
-             OpenAPI / Swagger
-             ========================= -->
+        <!-- OpenAPI / Swagger UI -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- =========================
-             Observability
-             ========================= -->
+        <!-- Observability -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
 
-        <!-- =========================
-             Resilience4j
-             ========================= -->
+        <!-- Resilience4j -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>${resilience4j.version}</version>
         </dependency>
 
-        <!-- =========================
-             Lombok
-             ========================= -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- =========================
-             MapStruct
-             ========================= -->
+        <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
-            <version>${mapstruct.version}</version>
         </dependency>
 
-        <!-- =========================
-             Database
-             ========================= -->
+        <!-- H2 for dev/test -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- =========================
-             Testing
-             ========================= -->
+        <!-- Test -->
+        <dependency>
+            <groupId>org.apiforgeframework</groupId>
+            <artifactId>api-forge-test-support</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apiforgeframework</groupId>
-            <artifactId>api-forge-test-support</artifactId>
-            <version>${api-forge.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
-            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
-            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
-    <!-- =========================================================
-         Build
-         ========================================================= -->
     <build>
-
         <plugins>
-
-            <!-- ==============================================
-                 API Forge Code Generation
-                 ============================================== -->
             <plugin>
                 <groupId>org.apiforgeframework</groupId>
                 <artifactId>api-forge-maven-plugin</artifactId>
-                <version>${api-forge.version}</version>
-
+                <version>${revision}</version>
                 <executions>
 
-                    <!-- Ingress -->
+                    <!-- INGRESS: orders API -->
                     <execution>
                         <id>generate-ingress-orders</id>
-
-                        <goals>
-                            <goal>generate-ingress</goal>
-                        </goals>
-
+                        <goals><goal>generate-ingress</goal></goals>
                         <configuration>
-                            <specFile>
-                                openapi/ingress/orders-api.yaml
-                            </specFile>
-
+                            <specFile>openapi/ingress/orders-api.yaml</specFile>
                             <basePackage>com.company.orders</basePackage>
-
                             <lombok>true</lombok>
+                            <openTelemetry>true</openTelemetry>
                             <validation>true</validation>
                             <logging>true</logging>
-                            <exceptionHandling>true</exceptionHandling>
-                            <openTelemetry>true</openTelemetry>
-
+                            <!-- generateServiceImpl=true writes scaffold only if file absent -->
+                            <generateServiceImpl>true</generateServiceImpl>
                             <manualOperations>
                                 <operation>streamOrderEvents</operation>
                             </manualOperations>
                         </configuration>
                     </execution>
 
-                    <!-- Inventory Egress -->
+                    <!-- EGRESS: inventory upstream -->
                     <execution>
                         <id>generate-egress-inventory</id>
-
-                        <goals>
-                            <goal>generate-egress</goal>
-                        </goals>
-
+                        <goals><goal>generate-egress</goal></goals>
                         <configuration>
-                            <specFile>
-                                openapi/egress/inventory-api.yaml
-                            </specFile>
-
+                            <specFile>openapi/egress/inventory-api.yaml</specFile>
                             <clientName>inventory</clientName>
                             <basePackage>com.company.orders</basePackage>
-
                             <authentication>BEARER_TOKEN</authentication>
-
-                            <retry>true</retry>
                             <circuitBreaker>true</circuitBreaker>
+                            <retry>true</retry>
                             <openTelemetry>true</openTelemetry>
                         </configuration>
                     </execution>
 
-                    <!-- Payment Egress -->
+                    <!-- EGRESS: payment upstream -->
                     <execution>
                         <id>generate-egress-payment</id>
-
                         <goals>
                             <goal>generate-egress</goal>
                         </goals>
-
                         <configuration>
-                            <specFile>
-                                openapi/egress/payment-api.yaml
-                            </specFile>
-
+                            <specFile>openapi/egress/payment-api.yaml</specFile>
                             <clientName>payment</clientName>
                             <basePackage>com.company.orders</basePackage>
-
-                            <authentication>
-                                OAUTH2_CLIENT_CREDENTIALS
-                            </authentication>
-
-                            <retry>true</retry>
+                            <authentication>OAUTH2_CLIENT_CREDENTIALS</authentication>
                             <circuitBreaker>true</circuitBreaker>
+                            <retry>true</retry>
                             <openTelemetry>true</openTelemetry>
                         </configuration>
                     </execution>
@@ -290,78 +169,28 @@
                 </executions>
             </plugin>
 
-            <!-- ==============================================
-                 Compiler Plugin
-                 ============================================== -->
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-
-                    <annotationProcessorPaths>
-
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </path>
-
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
-                        </path>
-
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-
-            <!-- ==============================================
-                 Spring Boot Plugin
-                 ============================================== -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- ==============================================
-                 JaCoCo
-                 ============================================== -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
-
                 <executions>
-
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-
+                    <execution><goals><goal>prepare-agent</goal></goals></execution>
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
-
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
+                        <goals><goal>report</goal></goals>
                     </execution>
-
                     <execution>
                         <id>check</id>
-
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-
+                        <goals><goal>check</goal></goals>
                         <configuration>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
-
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
@@ -371,22 +200,10 @@
                                     </limits>
                                 </rule>
                             </rules>
-
-                            <!-- Exclude generated sources -->
-                            <excludes>
-                                <exclude>
-                                    **/generated/**
-                                </exclude>
-                            </excludes>
                         </configuration>
                     </execution>
-
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
-
 </project>
-

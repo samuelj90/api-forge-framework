@@ -1,0 +1,86 @@
+openapi: "3.0.3"
+info:
+  title: Hello API
+  version: "1.0.0"
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /greetings:
+    post:
+      operationId: createGreeting
+      summary: Create a greeting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGreetingRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetingResponse'
+    get:
+      operationId: listGreetings
+      summary: List all greetings
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetingResponse'
+  /greetings/{greetingId}:
+    get:
+      operationId: getGreeting
+      summary: Get a greeting by ID
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetingResponse'
+    delete:
+      operationId: deleteGreeting
+      summary: Delete a greeting
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+components:
+  schemas:
+    CreateGreetingRequest:
+      type: object
+      required: [message, recipient]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        recipient:
+          type: string
+          minLength: 1
+    GreetingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        recipient:
+          type: string
+        created_at:
+          type: string
+          format: date-time

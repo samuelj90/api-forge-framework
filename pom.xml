@@ -6,57 +6,101 @@
 
     <groupId>org.apiforgeframework</groupId>
     <artifactId>api-forge-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>API-Forge :: Parent</name>
     <description>OpenAPI-first code generation framework for Spring Boot</description>
 
     <modules>
+        <module>api-forge-bom</module>
         <module>api-forge-annotations</module>
         <module>api-forge-runtime</module>
+        <module>api-forge-spring-boot-starter</module>
         <module>api-forge-maven-plugin</module>
         <module>api-forge-test-support</module>
         <module>example-service</module>
     </modules>
 
     <properties>
-        <java.version>17</java.version>
+        <revision>1.0.0-SNAPSHOT</revision>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Spring -->
+        <!--
+        ═══════════════════════════════════════════════════════════════════════
+        DEPENDENCY VERSION CATALOGUE
+        ═══════════════════════════════════════════════════════════════════════
+        All third-party versions live here and nowhere else.
+
+        HOW TO RESPOND TO A CVE
+        ───────────────────────
+        1. Run `mvn verify -Powasp` — the OWASP profile identifies the artifact.
+        2. Find its property below (e.g. swagger-parser.version).
+        3. Bump the value to the patched version.
+        4. Run `mvn verify` — Enforcer's dependencyConvergence rule ensures the
+           new version resolves consistently across the whole tree.
+        5. Commit, tag, release. The BOM propagates the fix to all consumers.
+
+        SPRING BOOT MANAGED DEPS
+        ────────────────────────
+        Dependencies managed by the Spring Boot BOM (Jackson, Netty, Micrometer,
+        SnakeYAML, etc.) are intentionally NOT listed here. We let the Spring
+        Boot BOM own those versions so consumer projects don't get a second
+        conflicting pinned version from us.
+
+        To override a Spring-Boot-managed dep for a CVE, add it to the
+        <dependencyManagement> section below AFTER the spring-boot-dependencies
+        import. Ordering matters — later entries win.
+        ═══════════════════════════════════════════════════════════════════════
+        -->
+
+        <!-- Core framework -->
         <spring-boot.version>3.2.0</spring-boot.version>
 
-        <!-- OpenAPI -->
+        <!-- OpenAPI tooling — NOT managed by Spring Boot BOM -->
         <openapi-generator.version>7.2.0</openapi-generator.version>
         <swagger-parser.version>2.1.20</swagger-parser.version>
         <springdoc.version>2.3.0</springdoc.version>
 
-        <!-- Resilience & Observability -->
+        <!-- Resilience — NOT managed by Spring Boot BOM -->
         <resilience4j.version>2.1.0</resilience4j.version>
-        <micrometer-tracing.version>1.2.0</micrometer-tracing.version>
 
-        <!-- Utilities -->
+        <!-- Code generation utilities — NOT managed by Spring Boot BOM -->
         <lombok.version>1.18.30</lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <mustache.version>0.9.11</mustache.version>
 
-        <mustache-compiler.version>0.9.11</mustache-compiler.version>
-
-        <!-- Testing -->
+        <!-- Testing — NOT managed by Spring Boot BOM -->
         <wiremock.version>3.3.1</wiremock.version>
         <archunit.version>1.2.1</archunit.version>
 
-        <!-- Plugin versions -->
-        <maven-core.version>3.9.13</maven-core.version>
-        <maven-plugin-api.version>3.9.13</maven-plugin-api.version>
-        <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
+        <!-- Maven plugin infrastructure -->
+        <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
+        <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
+        <maven-core.version>3.9.6</maven-core.version>
+
         <!-- Build plugins -->
-        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
+        <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
+        <maven-invoker-plugin.version>3.6.0</maven-invoker-plugin.version>
+        <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+        <owasp-dependency-check.version>9.0.9</owasp-dependency-check.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Boot BOM -->
+            <!--
+            ═══════════════════════════════════════════════════════════════════
+            BOM IMPORT ORDER IS SIGNIFICANT
+            ═══════════════════════════════════════════════════════════════════
+            1. Spring Boot BOM first — owns Jackson, Netty, Micrometer, etc.
+            2. Our BOM second — owns our own modules + our non-Spring third-party deps.
+
+            Explicit <dependency> entries below override both BOMs for that
+            specific artifact. Use this to patch individual CVEs without
+            waiting for a Spring Boot release.
+            ═══════════════════════════════════════════════════════════════════
+            -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -64,105 +108,33 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-            <!-- Internal modules -->
             <dependency>
                 <groupId>org.apiforgeframework</groupId>
-                <artifactId>api-forge-annotations</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apiforgeframework</groupId>
-                <artifactId>api-forge-runtime</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apiforgeframework</groupId>
-                <artifactId>api-forge-test-support</artifactId>
-                <version>${project.version}</version>
-                <scope>test</scope>
+                <artifactId>api-forge-bom</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
-            <!-- OpenAPI Generator -->
-            <dependency>
-                <groupId>org.openapitools</groupId>
-                <artifactId>openapi-generator</artifactId>
-                <version>${openapi-generator.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger.parser.v3</groupId>
-                <artifactId>swagger-parser</artifactId>
-                <version>${swagger-parser.version}</version>
-            </dependency>
+            <!--
+            ═══════════════════════════════════════════════════════════════════
+            INDIVIDUAL CVE OVERRIDE ZONE
+            ═══════════════════════════════════════════════════════════════════
+            Add entries here when a CVE fix requires pinning a version that
+            differs from what Spring Boot BOM provides. Each entry must have
+            a comment explaining why it overrides the BOM.
 
-            <!-- Resilience4j -->
+            Example (do not leave active — this is documentation only):
             <dependency>
-                <groupId>io.github.resilience4j</groupId>
-                <artifactId>resilience4j-spring-boot3</artifactId>
-                <version>${resilience4j.version}</version>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>2.2</version>
+                <!- CVE-2022-1471 — remote code execution via constructor.
+                    Spring Boot 3.2 already pins 2.0+, but if a future Boot
+                    version regresses, add the override here. ->
             </dependency>
-            <dependency>
-                <groupId>io.github.resilience4j</groupId>
-                <artifactId>resilience4j-reactor</artifactId>
-                <version>${resilience4j.version}</version>
-            </dependency>
-
-            <!-- Lombok -->
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-            </dependency>
-
-            <!-- MapStruct -->
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${mapstruct.version}</version>
-            </dependency>
-
-            <!-- SpringDoc -->
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-
-            <!-- WireMock -->
-            <dependency>
-                <groupId>org.wiremock</groupId>
-                <artifactId>wiremock-standalone</artifactId>
-                <version>${wiremock.version}</version>
-            </dependency>
-
-            <!-- ArchUnit -->
-            <dependency>
-                <groupId>com.tngtech.archunit</groupId>
-                <artifactId>archunit-junit5</artifactId>
-                <version>${archunit.version}</version>
-            </dependency>
-
-            <!-- Maven Plugin API -->
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-plugin-api</artifactId>
-                <version>${maven-plugin-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven.plugin-tools</groupId>
-                <artifactId>maven-plugin-annotations</artifactId>
-                <version>${maven-plugin-annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-core</artifactId>
-                <version>${maven-core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.spullara.mustache.java</groupId>
-                <artifactId>compiler</artifactId>
-                <version>${mustache-compiler.version}</version>
-            </dependency>
+            ═══════════════════════════════════════════════════════════════════
+            -->
         </dependencies>
     </dependencyManagement>
 
@@ -182,13 +154,13 @@
                         </excludes>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
+                    <version>3.12.1</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>17</release>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>
@@ -203,13 +175,13 @@
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
+
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>${jacoco-maven-plugin.version}</version>
+                    <version>0.8.11</version>
                     <configuration>
                         <excludes>
-                            <!-- Exclude all generated code from coverage -->
                             <exclude>**/*Generated*</exclude>
                             <exclude>**/model/ingress/**</exclude>
                             <exclude>**/model/egress/**</exclude>
@@ -218,7 +190,232 @@
                         </excludes>
                     </configuration>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals><goal>flatten</goal></goals>
+                        </execution>
+                        <execution>
+                            <id>flatten-clean</id>
+                            <phase>clean</phase>
+                            <goals><goal>clean</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!--
+                    DEPENDENCY CONVERGENCE ENFORCER
+                    ────────────────────────────────
+                    Fails the build if any dependency resolves to two different
+                    versions in the dependency tree. This catches transitive
+                    conflicts before they reach consumers.
+
+                    Run standalone: mvn enforcer:enforce
+                    Runs automatically during: mvn validate
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${maven-enforcer-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-dependency-convergence</id>
+                            <phase>validate</phase>
+                            <goals><goal>enforce</goal></goals>
+                            <configuration>
+                                <rules>
+                                    <!--
+                                        Dependency convergence: no two versions of the same
+                                        artifact in the resolved tree. Without this, Maven
+                                        silently picks one version via nearest-wins and the
+                                        loser is invisible until runtime.
+                                    -->
+                                    <dependencyConvergence/>
+
+                                    <!--
+                                        Require Maven 3.8+ and JDK 17+.
+                                        Prevents builds on environments too old to compile
+                                        release=17 bytecode correctly.
+                                    -->
+                                    <requireMavenVersion>
+                                        <version>[3.8.0,)</version>
+                                        <message>Maven 3.8+ required for correct BOM import ordering</message>
+                                    </requireMavenVersion>
+                                    <requireJavaVersion>
+                                        <version>[17,)</version>
+                                        <message>JDK 17+ required (maven.compiler.release=17)</message>
+                                    </requireJavaVersion>
+
+                                    <!--
+                                        No SNAPSHOT dependencies in a release build.
+                                        Prevents accidentally shipping with snapshot transitives.
+                                        Only active when the project version is not itself a SNAPSHOT.
+                                    -->
+                                    <requireReleaseDeps>
+                                        <onlyWhenRelease>true</onlyWhenRelease>
+                                        <message>Release builds must not depend on SNAPSHOT artifacts</message>
+                                    </requireReleaseDeps>
+                                </rules>
+                                <fail>true</fail>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${versions-maven-plugin.version}</version>
+                    <configuration>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-invoker-plugin</artifactId>
+                    <version>${maven-invoker-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-plugin-plugin</artifactId>
+                    <version>3.11.0</version>
+                </plugin>
+
+                <!--
+                    OWASP DEPENDENCY-CHECK
+                    ──────────────────────
+                    Scans the resolved dependency tree against the NVD CVE
+                    database. Configured here but activated via the 'owasp'
+                    profile below so it doesn't slow every build.
+
+                    Run: mvn verify -Powasp
+                    Report: target/dependency-check-report.html
+
+                    Threshold: fail on CVSS >= 7.0 (high severity).
+                    Adjust failBuildOnCVSS per your risk appetite.
+                -->
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${owasp-dependency-check.version}</version>
+                    <configuration>
+                        <!--
+                            CVSS threshold: 0=fail on any, 7=fail on high+critical only.
+                            7.0 is the recommended starting point for most projects.
+                            Lower to 4.0 for security-sensitive frameworks.
+                        -->
+                        <failBuildOnCVSS>7</failBuildOnCVSS>
+                        <formats>
+                            <format>HTML</format>
+                            <format>JSON</format>
+                        </formats>
+                        <!-- Suppress false positives — add entries as needed -->
+                        <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
+                        <!-- Cache NVD data locally to avoid re-downloading on every run -->
+                        <nvdDatafeedUrl>https://nvd.nist.gov/feeds/json/cve/1.1/</nvdDatafeedUrl>
+                        <autoUpdate>true</autoUpdate>
+                        <!-- Skip test-scoped deps — they don't ship to production -->
+                        <skipTestScope>true</skipTestScope>
+                        <!-- Skip provided-scoped deps (Maven plugin API, etc.) -->
+                        <skipProvidedScope>false</skipProvidedScope>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
+
+        <!-- Active in every build -->
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
+
+    <!--
+    ═══════════════════════════════════════════════════════════════════════════
+    PROFILES
+    ═══════════════════════════════════════════════════════════════════════════
+    -->
+    <profiles>
+        <!--
+            OWASP CVE SCAN PROFILE
+            ──────────────────────
+            Activate with: mvn verify -Powasp
+            Or in CI: mvn verify -Powasp -DnvdApiKey=${NVD_API_KEY}
+
+            Providing an NVD API key dramatically speeds up database updates.
+            Register free at: https://nvd.nist.gov/developers/request-an-api-key
+
+            Recommended CI schedule: nightly or on every PR that bumps a dep.
+        -->
+        <profile>
+            <id>owasp</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <executions>
+                            <execution>
+                                <goals><goal>aggregate</goal></goals>
+                                <phase>verify</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Pass NVD_API_KEY env var in CI for faster updates -->
+                            <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+            DEPENDENCY UPDATE CHECK PROFILE
+            ────────────────────────────────
+            Shows available updates without applying them.
+            Activate with: mvn versions:display-dependency-updates -Pupdate-check
+                           mvn versions:display-plugin-updates     -Pupdate-check
+
+            Useful before a maintenance release to identify what to upgrade.
+        -->
+        <profile>
+            <id>update-check</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>display-dep-updates</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>display-dependency-updates</goal>
+                                    <goal>display-plugin-updates</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

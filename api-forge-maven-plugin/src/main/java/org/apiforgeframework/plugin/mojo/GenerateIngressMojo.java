@@ -18,22 +18,25 @@ import java.util.*;
 /**
  * Maven goal: {@code api-forge:generate-ingress}
  *
- * <p>Reads the ingress OpenAPI spec and generates:
+ * <p>Reads an ingress OpenAPI spec and generates into
+ * {@code target/generated-sources/api-forge}:
  * <ul>
- *   <li>A {@code @RestController} that delegates to the service interface</li>
+ *   <li>A {@code @RestController} delegating to the service interface</li>
  *   <li>The service interface ({@code XxxApiService})</li>
  *   <li>Request/response DTOs with Lombok and Jakarta validation</li>
  * </ul>
  *
- * <p>Bind to {@code generate-sources} phase for automatic execution:
+ * <p>Optionally, when {@code generateServiceImpl=true}, writes a one-time
+ * implementation scaffold into {@code src/main/java} (never overwrites).
+ *
  * <pre>{@code
  * <execution>
  *   <id>generate-ingress</id>
  *   <goals><goal>generate-ingress</goal></goals>
- *   <phase>generate-sources</phase>
  *   <configuration>
  *     <specFile>openapi/ingress/orders-api.yaml</specFile>
  *     <basePackage>com.company.orders</basePackage>
+ *     <generateServiceImpl>true</generateServiceImpl>
  *   </configuration>
  * </execution>
  * }</pre>
@@ -41,14 +44,15 @@ import java.util.*;
 @Mojo(
     name = "generate-ingress",
     defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-    requiresDependencyResolution = ResolutionScope.COMPILE
+    requiresDependencyResolution = ResolutionScope.COMPILE,
+    threadSafe = true
 )
 public class GenerateIngressMojo extends AbstractMojo {
 
-    @Parameter(defaultValue = "${project}", readonly = true)
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
-    /** Path to the ingress OpenAPI spec file (relative to project root). */
+    /** Path to the ingress OpenAPI spec file, relative to project root. */
     @Parameter(property = "forge.ingress.specFile", required = true)
     private String specFile;
 
@@ -56,7 +60,10 @@ public class GenerateIngressMojo extends AbstractMojo {
     @Parameter(property = "forge.ingress.basePackage", required = true)
     private String basePackage;
 
-    /** Output directory for generated sources. */
+    /**
+     * Output directory for generated sources (controller, service interface, DTOs).
+     * This directory is added to the compile source root automatically.
+     */
     @Parameter(defaultValue = "${project.build.directory}/generated-sources/api-forge")
     private File outputDirectory;
 
@@ -64,31 +71,59 @@ public class GenerateIngressMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean lombok;
 
-    /** Generate OpenTelemetry instrumentation hooks. */
+    /** Generate OpenTelemetry instrumentation in the controller. */
     @Parameter(defaultValue = "true")
     private boolean openTelemetry;
 
-    /** Generate Jakarta validation annotations on DTOs. */
+    /** Generate Jakarta Bean Validation annotations on DTOs. */
     @Parameter(defaultValue = "true")
     private boolean validation;
 
-    /** Generate the base @ControllerAdvice exception handler. */
+    /** Generate the base @ControllerAdvice exception handler scaffolding. */
     @Parameter(defaultValue = "true")
     private boolean exceptionHandling;
 
-    /** Generate structured logging in controllers. */
+    /** Generate structured logging statements in the controller. */
     @Parameter(defaultValue = "true")
     private boolean logging;
 
-    /** OperationIds to skip generation for (manual escape hatch). */
+    /**
+     * OperationIds to exclude from controller generation.
+     * Use for endpoints that need hand-written controllers (e.g. SSE, multipart).
+     *
+     * <pre>{@code
+     * <manualOperations>
+     *   <operation>streamOrderEvents</operation>
+     * </manualOperations>
+     * }</pre>
+     */
     @Parameter
     private List<String> manualOperations = new ArrayList<>();
 
-    /** API version prefix injected into request mappings (e.g. "v1"). */
-    @Parameter
-    private String apiVersionPrefix;
+    /**
+     * When {@code true}, write a one-time service implementation scaffold into
+     * {@code serviceImplSourceDirectory} if the file does not already exist.
+     *
+     * <p>The scaffold implements the generated service interface with stub methods
+     * that throw {@code UnsupportedOperationException}. It is written exactly once
+     * and never overwritten — treat it as hand-written code from that point on.
+     *
+     * <p>Default: {@code false} (opt-in, to avoid surprising writes to src/).
+     */
+    @Parameter(defaultValue = "false")
+    private boolean generateServiceImpl;
 
-    /** Skip generation entirely. */
+    /**
+     * Root of the hand-written source tree. The service impl scaffold is placed
+     * under this directory at the correct package path.
+     *
+     * <p>Defaults to {@code ${project.basedir}/src/main/java}.
+     * Override only for non-standard project layouts.
+     */
+    @Parameter(defaultValue = "${project.basedir}/src/main/java")
+    private File serviceImplSourceDirectory;
+
+    /** Skip all generation. Useful for profiles or quick rebuilds. */
     @Parameter(property = "forge.skip", defaultValue = "false")
     private boolean skip;
 
@@ -99,67 +134,85 @@ public class GenerateIngressMojo extends AbstractMojo {
             return;
         }
 
-        File specFileResolved = resolveSpecFile();
-        getLog().info("API-Forge: Generating ingress from " + specFileResolved.getName());
+        File spec = resolveSpecFile();
+        getLog().info("API-Forge: Generating ingress from " + spec.getName());
 
-        // Parse spec
-        ForgeApiModel model;
-        try {
-            model = new ForgeSpecParser(specFileResolved).parse();
-        } catch (ForgeSpecParser.ForgeGenerationException e) {
-            throw new MojoFailureException("Spec parsing failed: " + e.getMessage(), e);
-        }
+        ForgeApiModel model = parseSpec(spec);
 
-        // Build config
         ForgeGenerationConfig config = ForgeGenerationConfig.builder()
                 .type(ForgeGenerationConfig.GenerationType.INGRESS)
-                .specFile(specFileResolved)
+                .specFile(spec)
                 .basePackage(basePackage)
                 .outputDirectory(outputDirectory)
-                .pluginVersion(getPluginVersion())
+                .pluginVersion(pluginVersion())
                 .lombokEnabled(lombok)
                 .openTelemetryEnabled(openTelemetry)
                 .validationEnabled(validation)
                 .exceptionHandlingEnabled(exceptionHandling)
                 .loggingEnabled(logging)
                 .manualOperations(new HashSet<>(manualOperations))
-                .apiVersionPrefix(apiVersionPrefix)
+                .generateServiceImpl(generateServiceImpl)
+                .serviceImplSourceDirectory(serviceImplSourceDirectory)
                 .build();
 
-        // Generate
-        ForgeIngressGenerator generator = new ForgeIngressGenerator(config, model);
+        // ── 1. Generate controller / service interface / DTOs ──────────────
         ForgeIngressGenerator.GenerationResult result;
         try {
-            result = generator.generate();
+            result = new ForgeIngressGenerator(config, model).generate();
         } catch (ForgeSpecParser.ForgeGenerationException e) {
-            throw new MojoExecutionException("Generation failed: " + e.getMessage(), e);
+            throw new MojoExecutionException("Ingress generation failed: " + e.getMessage(), e);
         }
 
-        // Register generated sources with Maven
+        // Register generated directory as a compile source root
         project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
-
-        // Write manifest for incremental build support
-        writeManifest(specFileResolved, result);
-
         getLog().info(String.format("API-Forge: Generated %d file(s) from %s",
-                result.generatedFiles().size(), specFileResolved.getName()));
+                result.generatedFiles().size(), spec.getName()));
+
+        // ── 2. Optionally scaffold the service implementation ──────────────
+        if (generateServiceImpl) {
+            ForgeServiceImplGenerator.ScaffoldResult scaffold;
+            try {
+                scaffold = new ForgeServiceImplGenerator(config, model).generate();
+            } catch (ForgeSpecParser.ForgeGenerationException e) {
+                throw new MojoExecutionException(
+                    "Service impl scaffold failed: " + e.getMessage(), e);
+            }
+            switch (scaffold.status()) {
+                case WRITTEN ->
+                    getLog().info("API-Forge: Service impl scaffold written → " +
+                            scaffold.file().getAbsolutePath());
+                case SKIPPED_EXISTS ->
+                    getLog().info("API-Forge: Service impl already exists, skipping → " +
+                            scaffold.file().getAbsolutePath());
+                case SKIPPED_DISABLED -> { /* unreachable when generateServiceImpl=true */ }
+            }
+        }
+
+        writeManifest(spec, result);
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private File resolveSpecFile() throws MojoFailureException {
         File f = new File(specFile);
-        if (!f.isAbsolute()) {
-            f = new File(project.getBasedir(), specFile);
-        }
+        if (!f.isAbsolute()) f = new File(project.getBasedir(), specFile);
         if (!f.exists()) {
             throw new MojoFailureException(
-                "Ingress spec file not found: " + f.getAbsolutePath() +
+                "Ingress spec not found: " + f.getAbsolutePath() +
                 "\nCheck <specFile> in your plugin configuration.");
         }
         return f;
     }
 
-    private String getPluginVersion() {
-        // Loaded from plugin's own manifest at runtime
+    private ForgeApiModel parseSpec(File spec) throws MojoFailureException {
+        try {
+            return new ForgeSpecParser(spec).parse();
+        } catch (ForgeSpecParser.ForgeGenerationException e) {
+            throw new MojoFailureException("Spec parsing failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String pluginVersion() {
         try {
             var pkg = getClass().getPackage();
             return pkg != null && pkg.getImplementationVersion() != null
@@ -169,31 +222,27 @@ public class GenerateIngressMojo extends AbstractMojo {
         }
     }
 
-    private void writeManifest(File specFile, ForgeIngressGenerator.GenerationResult result) {
+    private void writeManifest(File spec, ForgeIngressGenerator.GenerationResult result) {
         try {
-            File manifestFile = new File(outputDirectory, ".forge-manifest.json");
-            manifestFile.getParentFile().mkdirs();
-
-            Map<String, Object> manifest = new LinkedHashMap<>();
-            manifest.put("generatedAt", Instant.now().toString());
-            manifest.put("specFile", specFile.getAbsolutePath());
-            manifest.put("specChecksum", checksum(specFile));
-            manifest.put("generatedFiles", result.generatedFiles());
-            manifest.put("skippedFiles", result.skippedFiles());
-
-            new ObjectMapper()
-                    .enable(SerializationFeature.INDENT_OUTPUT)
-                    .writeValue(manifestFile, manifest);
+            File f = new File(outputDirectory, ".forge-manifest.json");
+            f.getParentFile().mkdirs();
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("generatedAt",    Instant.now().toString());
+            m.put("specFile",       spec.getAbsolutePath());
+            m.put("specChecksum",   sha256(spec));
+            m.put("generatedFiles", result.generatedFiles());
+            m.put("skippedFiles",   result.skippedFiles());
+            new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValue(f, m);
         } catch (Exception e) {
             getLog().warn("Failed to write forge manifest: " + e.getMessage());
         }
     }
 
-    private String checksum(File file) {
+    private String sha256(File file) {
         try {
-            var digest = java.security.MessageDigest.getInstance("SHA-256");
-            digest.update(Files.readAllBytes(file.toPath()));
-            return HexFormat.of().formatHex(digest.digest());
+            var d = java.security.MessageDigest.getInstance("SHA-256");
+            d.update(Files.readAllBytes(file.toPath()));
+            return HexFormat.of().formatHex(d.digest());
         } catch (Exception e) {
             return "unknown";
         }

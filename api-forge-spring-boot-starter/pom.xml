@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.apiforgeframework</groupId>
+        <artifactId>api-forge-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>api-forge-spring-boot-starter</artifactId>
+    <name>API-Forge :: Spring Boot Starter</name>
+    <description>
+        Spring Boot starter for API-Forge.
+
+        This is the single dependency consumers add to get the full
+        API-Forge runtime: autoconfiguration, egress client factory,
+        exception handling, observability hooks, and validation support.
+
+        Usage in your service:
+            &lt;dependency&gt;
+              &lt;groupId&gt;org.apiforgeframework&lt;/groupId&gt;
+              &lt;artifactId&gt;api-forge-spring-boot-starter&lt;/artifactId&gt;
+            &lt;/dependency&gt;
+
+        No @EnableApiForge or any other annotation is required.
+        Spring Boot's autoconfiguration mechanism picks up
+        ForgeAutoConfiguration automatically via
+        META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+        which is defined in api-forge-runtime.
+    </description>
+
+    <dependencies>
+        <!-- Runtime is the implementation — starter just declares it -->
+        <dependency>
+            <groupId>org.apiforgeframework</groupId>
+            <artifactId>api-forge-runtime</artifactId>
+        </dependency>
+
+        <!--
+            Annotations are needed at compile time in the consuming service
+            (for @ForgeFallback, @ForgeAuthProvider, etc.)
+        -->
+        <dependency>
+            <groupId>org.apiforgeframework</groupId>
+            <artifactId>api-forge-annotations</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot autoconfigure is optional here because api-forge-runtime
+            already declares it — but we list it explicitly so starters declare
+            their surface area clearly, following Spring Boot convention.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Resilience4j pulled in transitively via api-forge-runtime -->
+
+        <!-- Lombok annotation processor -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Configuration metadata for IDE autocomplete of forge.* properties -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

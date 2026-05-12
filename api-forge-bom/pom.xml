@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.apiforgeframework</groupId>
+        <artifactId>api-forge-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>api-forge-bom</artifactId>
+    <packaging>pom</packaging>
+    <name>API-Forge :: BOM</name>
+    <description>
+        Bill of Materials for API-Forge consumers.
+
+        Import this BOM and you never specify api-forge artifact versions individually:
+
+            &lt;dependencyManagement&gt;
+              &lt;dependencies&gt;
+                &lt;dependency&gt;
+                  &lt;groupId&gt;org.apiforgeframework&lt;/groupId&gt;
+                  &lt;artifactId&gt;api-forge-bom&lt;/artifactId&gt;
+                  &lt;version&gt;1.0.0&lt;/version&gt;
+                  &lt;type&gt;pom&lt;/type&gt;
+                  &lt;scope&gt;import&lt;/scope&gt;
+                &lt;/dependency&gt;
+              &lt;/dependencies&gt;
+            &lt;/dependencyManagement&gt;
+
+        Then simply declare:
+            &lt;dependency&gt;
+              &lt;groupId&gt;org.apiforgeframework&lt;/groupId&gt;
+              &lt;artifactId&gt;api-forge-spring-boot-starter&lt;/artifactId&gt;
+            &lt;/dependency&gt;
+    </description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-annotations</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-runtime</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-spring-boot-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiforgeframework</groupId>
+                <artifactId>api-forge-test-support</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
