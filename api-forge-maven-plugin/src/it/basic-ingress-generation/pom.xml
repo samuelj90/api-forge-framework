@@ -20,9 +20,24 @@
                             <specFile>openapi/ingress/hello-api.yaml</specFile>
                             <basePackage>org.example.hello</basePackage>
                             <lombok>true</lombok>
-                            <openTelemetry>false</openTelemetry>
+                            <openTelemetry>true</openTelemetry>
                             <validation>true</validation>
                             <generateServiceImpl>true</generateServiceImpl>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-egress-inventory</id>
+                        <goals>
+                            <goal>generate-egress</goal>
+                        </goals>
+                        <configuration>
+                            <specFile>openapi/egress/inventory-api.yaml</specFile>
+                            <clientName>inventory</clientName>
+                            <basePackage>org.example.hello</basePackage>
+                            <circuitBreaker>true</circuitBreaker>
+                            <retry>true</retry>
+                            <openTelemetry>true</openTelemetry>
+                            <lombok>true</lombok>
                         </configuration>
                     </execution>
                 </executions>

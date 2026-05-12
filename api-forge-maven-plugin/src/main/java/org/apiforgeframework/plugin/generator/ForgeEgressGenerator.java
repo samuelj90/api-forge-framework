@@ -45,17 +45,18 @@ public class ForgeEgressGenerator {
         String prefix     = capitalize(clientName);
         String clientClass = prefix + "ApiClient";
 
-        // 1. Client class
-        String clientPkg  = base + ".client." + clientName;
+        // FIXED: Correct package structure
+        String clientPkg  = base + ".client." + clientName.toLowerCase();
         File   clientFile = toFile(outDir, clientPkg, clientClass);
+
         render("ApiClient.java.mustache",
-               buildClientScope(prefix, clientPkg, base, clientName),
-               clientFile);
+                buildClientScope(prefix, clientPkg, base, clientName),
+                clientFile);
         generated.add(clientFile.getAbsolutePath());
         log.info("Generated egress client: {}", clientClass);
 
-        // 2. Egress DTOs
-        String modelPkg = base + ".model.egress." + clientName;
+        // DTOs
+        String modelPkg = base + ".model.egress." + clientName.toLowerCase();
         for (ForgeApiModel.ForgeSchema schema : model.getSchemas()) {
             File dto = toFile(outDir, modelPkg, schema.getName());
             render("EgressDto.java.mustache", buildDtoScope(schema, modelPkg), dto);
@@ -130,10 +131,17 @@ public class ForgeEgressGenerator {
         List<Map<String, Object>> fields = schema.getProperties().stream().map(p -> {
             Map<String, Object> f = new LinkedHashMap<>();
             f.put("name",        p.getCamelCaseName());
-            f.put("javaType",    p.getJavaType());
+
+            // FIXED: Use short name for better readability
+            String shortType = p.getJavaType()
+                    .replace("java.time.", "")
+                    .replace("java.math.", "");
+            f.put("javaType",    shortType);
+
             f.put("description", p.getDescription());
             return f;
         }).collect(Collectors.toList());
+
         s.put("fields", fields);
         return s;
     }
@@ -167,7 +175,9 @@ public class ForgeEgressGenerator {
     }
 
     private File toFile(File outDir, String pkg, String className) {
-        return Path.of(outDir.getAbsolutePath(), pkg.replace('.', File.separatorChar))
-                .resolve(className + ".java").toFile();
+        return Path.of(outDir.getAbsolutePath(),
+                        pkg.replace('.', File.separatorChar))
+                .resolve(className + ".java")
+                .toFile();
     }
 }

@@ -3,8 +3,8 @@ package {{clientPackage}};
 import {{modelPackage}}.*;
 import org.apiforgeframework.annotations.ForgeEgressClient;
 import org.apiforgeframework.annotations.ForgeGenerated;
-import client.org.apiforgeframework.runtime.ForgeEgressClientFactory;
-import org.apiforgeframework.runtime.exception.ForgeExceptions.ForgeEgressException;
+import org.apiforgeframework.runtime.ForgeEgressClientFactory;
+import org.apiforgeframework.runtime.exception.ForgeEgressException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
 import io.micrometer.tracing.Span;
@@ -13,147 +13,115 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 /**
- * AUTO-GENERATED egress client from {{specFile}}.
- * Plugin: api-forge-maven-plugin v{{pluginVersion}} — generated at {{generatedAt}}
- *
- * DO NOT EDIT — regenerated on every build.
- *
- * Inject directly into service implementations:
- * <pre>
- * {@code @Service}
- * {@code @RequiredArgsConstructor}
- * public class MyServiceImpl implements MyService {
- *     private final {{className}} {{clientName}}Client;
- * }
- * </pre>
- */
+* AUTO-GENERATED reactive egress client from {{specFile}}.
+* Plugin: api-forge-maven-plugin v{{pluginVersion}} — generated at {{generatedAt}}
+*
+* Non-blocking / Reactive by default.
+*/
 @Component
 @Slf4j
 @ForgeEgressClient(
-    name = "{{clientName}}",
-    spec = "{{specFile}}",
-    circuitBreaker = {{circuitBreakerEnabled}},
-    retry = {{retryEnabled}},
-    tracing = {{openTelemetryEnabled}}
+name = "{{clientName}}",
+spec = "{{specFile}}",
+circuitBreaker = {{circuitBreakerEnabled}},
+retry = {{retryEnabled}},
+tracing = {{openTelemetryEnabled}}
 )
 @ForgeGenerated(fromSpec = "{{specFile}}", pluginVersion = "{{pluginVersion}}", generatedAt = "{{generatedAt}}")
 public class {{className}} {
 
-    private final WebClient webClient;
-    private final Tracer tracer;
-    {{#circuitBreakerEnabled}}
+private final WebClient webClient;
+private final Tracer tracer;
+{{#circuitBreakerEnabled}}
     private final CircuitBreaker circuitBreaker;
-    {{/circuitBreakerEnabled}}
-    {{#retryEnabled}}
+{{/circuitBreakerEnabled}}
+{{#retryEnabled}}
     private final Retry retry;
-    {{/retryEnabled}}
+{{/retryEnabled}}
 
-    public {{className}}(ForgeEgressClientFactory factory) {
-        this.webClient      = factory.webClient("{{clientName}}");
-        this.tracer         = factory.tracer();
-        {{#circuitBreakerEnabled}}
-        this.circuitBreaker = factory.circuitBreaker("{{clientName}}");
-        {{/circuitBreakerEnabled}}
-        {{#retryEnabled}}
-        this.retry          = factory.retry("{{clientName}}");
-        {{/retryEnabled}}
-    }
+public {{className}}(ForgeEgressClientFactory factory) {
+this.webClient = factory.webClient("{{clientName}}");
+this.tracer = factory.tracer();
+{{#circuitBreakerEnabled}}
+    this.circuitBreaker = factory.circuitBreaker("{{clientName}}");
+{{/circuitBreakerEnabled}}
+{{#retryEnabled}}
+    this.retry = factory.retry("{{clientName}}");
+{{/retryEnabled}}
+}
 
-    /** Expose circuit breaker state for testing. */
-    public CircuitBreaker.State circuitBreakerState() {
-        {{#circuitBreakerEnabled}}
-        return circuitBreaker.getState();
-        {{/circuitBreakerEnabled}}
-        {{^circuitBreakerEnabled}}
-        return CircuitBreaker.State.CLOSED;
-        {{/circuitBreakerEnabled}}
-    }
-
-    {{#operations}}
+{{#operations}}
     /**
-     * {{summary}}
-     * <p>{{httpMethod}} {{path}}
-     */
-    public {{^returnsVoid}}{{responseSchema}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} {{operationId}}(
-            {{#pathParams}}{{javaType}} {{name}},
-            {{/pathParams}}
-            {{#queryParams}}{{javaType}} {{name}},
-            {{/queryParams}}
-            {{#hasRequestBody}}{{requestBodySchema}} requestBody{{/hasRequestBody}}) {
+    * {{summary}}
+    * <p>{{httpMethod}} {{path}}
+        */
+        public Mono<{{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}Void{{/returnsVoid}}> {{operationId}}(
+    {{{parameterDeclaration}}}) {
 
-        {{#openTelemetryEnabled}}
-        Span span = tracer.nextSpan().name("{{clientName}}.{{operationId}}");
-        try (var scope = tracer.withSpan(span.start())) {
-        {{/openTelemetryEnabled}}
+    {{#openTelemetryEnabled}}
+            Span span = tracer.nextSpan().name("{{clientName}}.{{operationId}}");
+            return Mono.defer(() -> {
+            try (var scope = tracer.withSpan(span.start())) {
+    {{/openTelemetryEnabled}}
 
         log.debug("[{{clientName}}] → {{httpMethod}} {{path}}");
 
-        {{#circuitBreakerEnabled}}{{#retryEnabled}}
-        var supplier = CircuitBreaker.decorateSupplier(circuitBreaker,
-            Retry.decorateSupplier(retry, () -> executeRequest_{{operationId}}(
-                {{#pathParams}}{{name}}, {{/pathParams}}
-                {{#queryParams}}{{name}}, {{/queryParams}}
-                {{#hasRequestBody}}requestBody{{/hasRequestBody}})));
-        {{#returnsVoid}}
-        supplier.get();
-        {{/returnsVoid}}
-        {{^returnsVoid}}
-        return supplier.get();
-        {{/returnsVoid}}
-        {{/retryEnabled}}{{/circuitBreakerEnabled}}
-        {{^circuitBreakerEnabled}}{{^retryEnabled}}
-        {{#returnsVoid}}executeRequest_{{operationId}}({{/returnsVoid}}
-        {{^returnsVoid}}return executeRequest_{{operationId}}({{/returnsVoid}}
-            {{#pathParams}}{{name}}, {{/pathParams}}
-            {{#queryParams}}{{name}}, {{/queryParams}}
-            {{#hasRequestBody}}requestBody{{/hasRequestBody}});
-        {{/retryEnabled}}{{/circuitBreakerEnabled}}
+        Mono<{{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}Void{{/returnsVoid}}> result = executeRequest_{{operationId}}({{{parameterCallArgs}}});
 
-        {{#openTelemetryEnabled}}
-        } catch (Exception e) {
+    {{#circuitBreakerEnabled}}{{#retryEnabled}}
+            return result.transformDeferred(CircuitBreaker.decorateMono(circuitBreaker))
+            .transformDeferred(Retry.decorateMono(retry));
+    {{/retryEnabled}}{{/circuitBreakerEnabled}}
+    {{^circuitBreakerEnabled}}{{^retryEnabled}}
+            return result;
+    {{/retryEnabled}}{{/circuitBreakerEnabled}}
+
+    {{#openTelemetryEnabled}}
+            } catch (Exception e) {
             span.error(e);
             throw e;
-        } finally {
+            } finally {
             span.end();
+            }
+            });
+    {{/openTelemetryEnabled}}
         }
-        {{/openTelemetryEnabled}}
-    }
 
-    private {{^returnsVoid}}{{responseSchema}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} executeRequest_{{operationId}}(
-            {{#pathParams}}{{javaType}} {{name}},
-            {{/pathParams}}
-            {{#queryParams}}{{javaType}} {{name}},
-            {{/queryParams}}
-            {{#hasRequestBody}}{{requestBodySchema}} requestBody{{/hasRequestBody}}) {
-        {{^returnsVoid}}return {{/returnsVoid}}webClient
-            .{{httpMethod}}()
-            .uri(uriBuilder -> uriBuilder
-                .path("{{path}}")
-                {{#pathParams}}.build({{name}}){{/pathParams}}
-                {{^pathParams}}.build(){{/pathParams}})
-            {{#hasRequestBody}}
+        private Mono<{{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}Void{{/returnsVoid}}> executeRequest_{{operationId}}(
+    {{{parameterDeclaration}}}) {
+
+        return webClient
+        .{{httpMethodLower}}()
+        .uri(uriBuilder -> uriBuilder
+        .path("{{path}}")
+    {{#pathParamCallArgs}}
+            .build({{{pathParamCallArgs}}})
+    {{/pathParamCallArgs}}
+    {{^pathParamCallArgs}}
+            .build()
+    {{/pathParamCallArgs}})
+    {{#hasRequestBody}}
             .bodyValue(requestBody)
-            {{/hasRequestBody}}
-            .retrieve()
-            .onStatus(HttpStatusCode::is4xxClientError, resp ->
-                resp.bodyToMono(String.class).map(body ->
-                    new ForgeEgressException("{{clientName}}", resp.statusCode().value(), body)))
-            .onStatus(HttpStatusCode::is5xxServerError, resp ->
-                resp.bodyToMono(String.class).map(body ->
-                    new ForgeEgressException("{{clientName}}", resp.statusCode().value(), body)))
-            {{^returnsVoid}}
-            .bodyToMono({{responseSchema}}.class)
-            .block();
-            {{/returnsVoid}}
-            {{#returnsVoid}}
-            .toBodilessEntity()
-            .block();
-            {{/returnsVoid}}
-    }
+    {{/hasRequestBody}}
+        .retrieve()
+        .onStatus(HttpStatusCode::is4xxClientError, resp ->
+        resp.bodyToMono(String.class).map(body ->
+        new ForgeEgressException("{{clientName}}", resp.statusCode().value(), body)))
+        .onStatus(HttpStatusCode::is5xxServerError, resp ->
+        resp.bodyToMono(String.class).map(body ->
+        new ForgeEgressException("{{clientName}}", resp.statusCode().value(), body)))
+    {{^returnsVoid}}
+            .bodyToMono({{{responseSchema}}}.class);
+    {{/returnsVoid}}
+    {{#returnsVoid}}
+            .toBodilessEntity().then();
+    {{/returnsVoid}}
+        }
 
-    {{/operations}}
-}
+{{/operations}}
+    }

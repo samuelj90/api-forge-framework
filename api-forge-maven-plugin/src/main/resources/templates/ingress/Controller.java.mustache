@@ -32,49 +32,39 @@ public class {{className}} {
 
     {{#operations}}
     {{#deprecated}}
-    @Deprecated
+        @Deprecated
     {{/deprecated}}
     {{springMappingAnnotation}}("{{path}}")
     @ForgeOperation(operationId = "{{operationId}}", httpMethod = "{{httpMethod}}", path = "{{path}}")
-    public ResponseEntity<{{#responseSchema}}{{responseSchema}}{{/responseSchema}}{{^responseSchema}}Void{{/responseSchema}}> {{operationId}}(
-            {{#pathParams}}
-            @PathVariable {{javaType}} {{name}},
-            {{/pathParams}}
-            {{#queryParams}}
-            @RequestParam {{javaType}} {{name}},
-            {{/queryParams}}
-            {{#hasRequestBody}}
-            @Valid @RequestBody {{requestBodySchema}} requestBody{{/hasRequestBody}}) {
+    public ResponseEntity<{{{responseSchema}}}{{^responseSchema}}Void{{/responseSchema}}> {{operationId}}(
+    {{{parameterDeclaration}}}) {
 
-        {{#openTelemetryEnabled}}
-        Span span = tracer.nextSpan().name("{{operationId}}");
-        try (var scope = tracer.withSpan(span.start())) {
-        {{/openTelemetryEnabled}}
-        {{#loggingEnabled}}
+    {{#openTelemetryEnabled}}
+            Span span = tracer.nextSpan().name("{{operationId}}");
+            try (var scope = tracer.withSpan(span.start())) {
+    {{/openTelemetryEnabled}}
+    {{#loggingEnabled}}
             log.debug("{{operationId}} invoked");
-        {{/loggingEnabled}}
-            {{^returnsVoid}}
-            {{#responseSchema}}{{responseSchema}}{{/responseSchema}} result = {{/returnsVoid}}service.{{operationId}}(
-                    {{#pathParams}}{{name}},
-                    {{/pathParams}}
-                    {{#queryParams}}{{name}},
-                    {{/queryParams}}
-                    {{#hasRequestBody}}requestBody{{/hasRequestBody}});
-            {{#returnsVoid}}
+    {{/loggingEnabled}}
+
+    {{#returnsVoid}}
+            service.{{operationId}}({{{parameterCallArgs}}});
             return ResponseEntity.status({{successStatusCode}}).build();
-            {{/returnsVoid}}
-            {{^returnsVoid}}
+    {{/returnsVoid}}
+    {{^returnsVoid}}
+        {{{responseSchema}}} result = service.{{operationId}}({{{parameterCallArgs}}});
             return ResponseEntity.status({{successStatusCode}}).body(result);
-            {{/returnsVoid}}
-        {{#openTelemetryEnabled}}
-        } catch (Exception e) {
+    {{/returnsVoid}}
+
+    {{#openTelemetryEnabled}}
+            } catch (Exception e) {
             span.error(e);
             throw e;
-        } finally {
+            } finally {
             span.end();
+            }
+    {{/openTelemetryEnabled}}
         }
-        {{/openTelemetryEnabled}}
-    }
 
-    {{/operations}}
+{{/operations}}
 }

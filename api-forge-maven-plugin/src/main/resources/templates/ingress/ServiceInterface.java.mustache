@@ -38,7 +38,6 @@ public interface {{className}} {
      {{/deprecated}}
      */
     {{#deprecated}}@Deprecated{{/deprecated}}
-    {{^returnsVoid}}{{responseSchema}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} {{operationId}}({{#pathParams}}{{javaType}} {{name}},{{/pathParams}}{{#queryParams}}{{javaType}} {{name}},{{/queryParams}}{{#hasRequestBody}}{{requestBodySchema}} request{{/hasRequestBody}});
-
+    {{^returnsVoid}}{{{responseSchema}}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} {{operationId}}({{{serviceMethodDeclaration}}});
     {{/operations}}
 }

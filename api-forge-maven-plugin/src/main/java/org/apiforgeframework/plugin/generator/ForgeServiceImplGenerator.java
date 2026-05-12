@@ -78,14 +78,16 @@ public class ForgeServiceImplGenerator {
 
     private File resolveImplFile() {
         File sourceRoot = config.getServiceImplSourceDirectory();
-        String implPackage  = config.getBasePackage() + ".service.impl";
-        String implFileName = classPrefix() + "ApiServiceImpl.java";
+        String prefix = classPrefix();
+        String implPackage = config.getBasePackage() + ".service.impl";
+        String fileName = prefix + "ApiServiceImpl.java";
 
-        return Path.of(
-                sourceRoot.getAbsolutePath(),
-                implPackage.replace('.', File.separatorChar),
-                implFileName
-        ).toFile();
+        // Ensure directories exist
+        File targetDir = Path.of(sourceRoot.getAbsolutePath(),
+                implPackage.replace('.', File.separatorChar)).toFile();
+        targetDir.mkdirs();
+
+        return new File(targetDir, fileName);
     }
 
     // ── Scaffold writing ──────────────────────────────────────────────────────
@@ -93,26 +95,26 @@ public class ForgeServiceImplGenerator {
     private void writeScaffold(File implFile) {
         implFile.getParentFile().mkdirs();
 
-        Map<String, Object> scope = buildScope(implFile);
+        Map<String, Object> scope = buildScope();
 
         try (InputStream tmpl = getClass().getClassLoader().getResourceAsStream(TEMPLATE)) {
             if (tmpl == null) {
-                throw new ForgeSpecParser.ForgeGenerationException(
-                    "Service impl template not found: " + TEMPLATE);
+                throw new ForgeSpecParser.ForgeGenerationException("Service impl template not found: " + TEMPLATE);
             }
             Mustache m = mf.compile(new InputStreamReader(tmpl), TEMPLATE);
             try (FileWriter w = new FileWriter(implFile)) {
                 m.execute(w, scope).flush();
             }
+            log.info("Service impl scaffold written to: {}", implFile.getAbsolutePath());
         } catch (IOException e) {
             throw new ForgeSpecParser.ForgeGenerationException(
-                "Failed to write service impl scaffold: " + implFile.getAbsolutePath(), e);
+                    "Failed to write service impl scaffold: " + implFile.getAbsolutePath(), e);
         }
     }
 
     // ── Scope builder ─────────────────────────────────────────────────────────
 
-    private Map<String, Object> buildScope(File implFile) {
+    private Map<String, Object> buildScope() {
         String prefix         = classPrefix();
         String serviceInterface = prefix + "ApiService";
         String implPackage    = config.getBasePackage() + ".service.impl";

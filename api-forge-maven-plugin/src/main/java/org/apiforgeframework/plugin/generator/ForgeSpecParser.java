@@ -41,8 +41,7 @@ public class ForgeSpecParser {
      * are enabled. All of these are artefacts and must be filtered out.
      */
     private static final Pattern ANONYMOUS_NAME = Pattern.compile(
-        "(?i)^(inline_response_\\d+.*|.*_body$|.*_items$|.*_payment$|" +
-        ".*_content$|.*_shipping_address$|[a-z][a-z0-9]*(_[a-z][a-z0-9]*)+)$"
+            "(?i)^(inline_response_\\d+.*|.*_body$|.*_items$|.*_payment$|.*_content$|.*_address$|[a-z][a-z0-9]*(_[a-z][a-z0-9]*)+)$"
     );
 
     private final File specFile;
@@ -65,22 +64,12 @@ public class ForgeSpecParser {
                 .readLocation(specFile.getAbsolutePath(), null, options);
 
         if (result.getMessages() != null) {
-            List<String> errors = result.getMessages().stream()
-                    .filter(m -> m.toLowerCase().contains("error"))
-                    .toList();
-            if (!errors.isEmpty()) {
-                throw new ForgeGenerationException(
-                    "Spec errors in " + specFile.getName() + ":\n  - " +
-                    String.join("\n  - ", errors));
-            }
-            result.getMessages().forEach(w ->
-                    log.warn("Spec warning [{}]: {}", specFile.getName(), w));
+            result.getMessages().forEach(w -> log.warn("Spec warning: {}", w));
         }
 
         OpenAPI api = result.getOpenAPI();
         if (api == null) {
-            throw new ForgeGenerationException(
-                    "Failed to parse: " + specFile.getAbsolutePath());
+            throw new ForgeGenerationException("Failed to parse OpenAPI spec: " + specFile);
         }
         return buildModel(api);
     }
@@ -90,30 +79,28 @@ public class ForgeSpecParser {
     private ForgeApiModel buildModel(OpenAPI api) {
         String title   = api.getInfo() != null ? api.getInfo().getTitle()   : "Unknown API";
         String version = api.getInfo() != null ? api.getInfo().getVersion() : "1.0.0";
-        String base    = extractBasePath(api);
+        String basePath = extractBasePath(api);
 
-        List<ForgeApiModel.ForgeOperation> ops = new ArrayList<>();
+        List<ForgeApiModel.ForgeOperation> operations = new ArrayList<>();
         if (api.getPaths() != null) {
-            api.getPaths().forEach((path, item) -> extractOperations(path, item, ops));
+            api.getPaths().forEach((path, item) -> extractOperations(path, item, operations));
         }
 
         List<ForgeApiModel.ForgeSchema> schemas = new ArrayList<>();
         if (api.getComponents() != null && api.getComponents().getSchemas() != null) {
             api.getComponents().getSchemas().forEach((name, schema) -> {
-                if (isAnonymous(name)) {
-                    log.debug("Filtering anonymous schema '{}'", name);
-                } else {
+                if (!isAnonymous(name)) {
                     schemas.add(buildSchemaModel(name, schema));
                 }
             });
         }
 
-        log.info("'{}' v{}: {} ops, {} schemas, basePath='{}'",
-                title, version, ops.size(), schemas.size(), base);
-
         return ForgeApiModel.builder()
-                .title(title).version(version).basePath(base)
-                .operations(ops).schemas(schemas)
+                .title(title)
+                .version(version)
+                .basePath(basePath)
+                .operations(operations)
+                .schemas(schemas)
                 .build();
     }
 
@@ -163,11 +150,18 @@ public class ForgeSpecParser {
         return schemaToJavaType(mt.getSchema());
     }
 
+    private boolean hasResponseBody(ApiResponse resp) {
+        return resp.getContent() != null &&
+                resp.getContent().containsKey("application/json") &&
+                resp.getContent().get("application/json").getSchema() != null;
+    }
+
     private String extractSuccessResponseType(Operation op) {
         if (op.getResponses() == null) return null;
         return op.getResponses().entrySet().stream()
                 .filter(e -> e.getKey().startsWith("2"))
                 .sorted(Map.Entry.comparingByKey())
+                .filter(e -> hasResponseBody(e.getValue()))
                 .findFirst()
                 .map(e -> responseBodyType(e.getValue()))
                 .orElse(null);

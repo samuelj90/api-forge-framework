@@ -3,7 +3,7 @@ package {{implPackage}};
 import {{serviceApiPackage}}.{{serviceInterface}};
 {{#operations}}
     {{^returnsVoid}}
-        import {{modelPackage}}.{{returnType}};
+        import {{modelPackage}}.{{{returnType}}};
     {{/returnsVoid}}
 {{/operations}}
 
@@ -12,15 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
-* Auto-generated service implementation scaffold.
+* Auto-generated service implementation scaffold from {{specFile}}.
+* Generated at: {{generatedAt}}
 *
-* <p><strong>Specification:</strong> {{specFile}}</p>
-* <p><strong>Generated at:</strong> {{generatedAt}}</p>
-*
-* <p>
-    * This file is generated only once and will never be overwritten automatically.
-    * After generation, it is considered application-owned code.
-    * </p>
+* This file is generated ONLY ONCE and will NEVER be overwritten.
+* Treat it as regular hand-written code after creation.
 */
 @Service
 {{#lombokEnabled}}
@@ -29,13 +25,11 @@ import org.springframework.stereotype.Service;
 {{/lombokEnabled}}
 public class {{className}} implements {{serviceInterface}} {
 
-// -------------------------------------------------------------------------
-// Egress clients / repositories / dependencies
-// -------------------------------------------------------------------------
-
+// ----------------------------------------------------------------------
+// Inject your dependencies here (clients, repositories, etc.)
 // Example:
-// private final ExternalClient externalClient;
-// private final UserRepository userRepository;
+// private final InventoryApiClient inventoryClient;
+// ----------------------------------------------------------------------
 
 {{#operations}}
 
@@ -46,23 +40,18 @@ public class {{className}} implements {{serviceInterface}} {
         @Deprecated
     {{/deprecated}}
     @Override
-    public {{returnType}} {{serviceMethodDeclaration}} {
+    public {{^returnsVoid}}{{{returnType}}}{{/returnsVoid}}{{#returnsVoid}}void{{/returnsVoid}} {{operationId}}({{{serviceMethodDeclaration}}}) {
 
-    // TODO: Implement operation "{{operationId}}"
+    log.debug("Executing operation: {{operationId}}");
 
-    {{#lombokEnabled}}
-        log.debug("Executing operation: {{operationId}}");
-    {{/lombokEnabled}}
-
+    // TODO: Implement business logic for "{{operationId}}"
     {{#returnsVoid}}
-        throw new UnsupportedOperationException(
-        "Operation '{{operationId}}' is not implemented yet");
+        throw new UnsupportedOperationException("Operation '{{operationId}}' is not implemented yet");
     {{/returnsVoid}}
-
     {{^returnsVoid}}
-        throw new UnsupportedOperationException(
-        "Operation '{{operationId}}' is not implemented yet");
+        throw new UnsupportedOperationException("Operation '{{operationId}}' is not implemented yet");
     {{/returnsVoid}}
     }
+
 {{/operations}}
 }

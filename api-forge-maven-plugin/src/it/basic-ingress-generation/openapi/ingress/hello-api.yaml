@@ -24,35 +24,6 @@ paths:
                 $ref: '#/components/schemas/GreetingResponse'
         '400':
           description: Validation error
-    get:
-      operationId: listGreetings
-      summary: List all greetings
-      responses:
-        '200':
-          description: List of greetings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GreetingResponse'
-  /greetings/{greetingId}:
-    get:
-      operationId: getGreeting
-      summary: Get a greeting by ID
-      parameters:
-        - name: greetingId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: List of greetings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GreetingResponse'
-        '404':
-          description: Not found
     delete:
       operationId: deleteGreeting
       summary: Delete a greeting
@@ -65,7 +36,51 @@ paths:
       responses:
         '204':
           description: Deleted
+  /greetings/{greetingId}:
+    get:
+      operationId: getGreeting
+      summary: Get a greeting by ID
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: includeDetails
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GreetingResponse'
+        '404':
+          description: Not found
 
+  /greetings/batch:
+    post:
+      operationId: createGreetings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateGreetingRequest'
+      responses:
+        '200':
+          description: Batch created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GreetingResponse'
 components:
   schemas:
     CreateGreetingRequest:
@@ -76,9 +91,15 @@ components:
           type: string
           minLength: 1
           maxLength: 500
+          pattern: '^[a-zA-Z0-9\s.,!?-]+$'
         recipient:
           type: string
           minLength: 1
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+
     GreetingResponse:
       type: object
       properties:
@@ -88,6 +109,13 @@ components:
           type: string
         recipient:
           type: string
-        created_at:
+        createdAt:
           type: string
           format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
